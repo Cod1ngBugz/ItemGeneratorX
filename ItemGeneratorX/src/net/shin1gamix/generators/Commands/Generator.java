@@ -52,6 +52,13 @@ public class Generator implements CommandExecutor {
 			} else if (args[0].equalsIgnoreCase("cancel")) {
 				this.getCore().getGenUt().cancelTasks();
 				MessagesX.TASKS_CANCELLED.msg(p);
+			} else if (args[0].equalsIgnoreCase("reload")) {
+				this.getCore().getSettings().reloadFile();
+				this.getCore().getMessages().reloadFile();
+				MessagesX.repairPaths(this.getCore().getMessages());
+				this.getCore().getGenUt().cancelTasks();
+				this.getCore().getGenUt().startTasks();
+				MessagesX.PLUGIN_RELOAD.msg(p);
 			} else if (args[0].equalsIgnoreCase("start")) {
 				this.getCore().getGenUt().startTasks();
 				MessagesX.TASKS_CONTINUE.msg(p);

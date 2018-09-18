@@ -60,7 +60,7 @@ public class GenUtility {
 			return;
 		}
 
-		final int time = Integer.valueOf(timeAmount);
+	
 		final int playerLimit;
 
 		if (playerLimitAmount == null || !Ut.isInt(playerLimitAmount)) {
@@ -71,16 +71,15 @@ public class GenUtility {
 
 		final double velocity;
 
-		if (vector == null) {
-			velocity = 0.25;
-		} else if (!Ut.isDouble(vector)) {
+		if (vector == null&&!Ut.isDouble(vector)) {
 			velocity = 0.25;
 		} else {
 			velocity = Double.valueOf(vector);
 		}
 
 		final Location loc = p.getLocation();
-
+		final int time = Integer.valueOf(timeAmount);
+		
 		final GenScheduler gensch = new GenScheduler(this.main, loc, id, item, time < 1 ? 1 : time, playerLimit,
 				velocity);
 		GenScheduler.getGens().put(id, gensch);

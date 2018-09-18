@@ -1,1 +1,24 @@
+Hologram:
+  materials:
+    stone: 'STONE'
+    dblock: 'DIAMOND_BLOCK'
+    eblock: 'EMERALD_BLOCK'
+  Enabled:
+    - '%eblock%' # This has to be alone, if it's not alone, it will not be added as an item.
+    - '&7&m------------------'
+    - '&7\- &2Spawning &3%item% &7-/'
+    - '    &6%time-left%'
+    - '%dblock%'
+  Disabled:
+    - '&7&m------------------'
+    - '&7\- &3Generator Status &7-/'
+    - '   &cCurrently disabled...'
+  Disabled:
+    - '&7&m------------------'
+    - '&7\- Spawning &3%item% &7i -/'
+    - '    &6%time-left%'
+  Error:
+    - '&cSomething went wrong with'
+    - '&cthe current generator...'
+    - '&4Please contact an admin!'
 Generators: {}

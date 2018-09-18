@@ -25,6 +25,7 @@ public enum MessagesX {
 	TASKS_CANCELLED("Messages.Generators-Disabled","&cAll generators have been disabled!"),
 	TASKS_CONTINUE("Messages.Generators-Enabled","&aAll generators have been enabled!"),
 	PLAYER_TELEPORT("Messages.Player-Teleport","&7You've been teleported to the generator &e%id%&7."),
+	PLUGIN_RELOAD("Messages.Reload","&aThe plugin has been reloaded successfully."),
 	HELP_FORMAT("Messages.Help-Format",
 							"&7&m----------------------------------",
 			                "&3/gen help &7- Shows this menu.",
