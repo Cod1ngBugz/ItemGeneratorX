@@ -23,11 +23,12 @@ public class Core extends JavaPlugin {
 		new Generator(this);
 
 		MessagesX.repairPaths(this.getMessages());
+		this.getGenUt().startsMachines();
 	}
 
 	@Override
 	public void onDisable() {
-
+		this.getGenUt().saveMachines();
 	}
 
 	public CFG getSettings() {

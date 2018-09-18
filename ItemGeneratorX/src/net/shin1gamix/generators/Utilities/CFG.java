@@ -36,7 +36,6 @@ public class CFG {
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-
 			if (this.saveResource) {
 				this.p.saveResource(this.filename, true);
 			}

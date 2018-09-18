@@ -4,6 +4,8 @@ import java.util.Map;
 
 import org.bukkit.command.CommandSender;
 
+import com.google.common.base.Preconditions;
+
 import net.shin1gamix.generators.Utilities.CFG;
 import net.shin1gamix.generators.Utilities.Ut;
 
@@ -19,30 +21,11 @@ public enum MessagesX {
 							"&3/gen create <gen> <time> <required-players-online> &7- Creates a gen.",
 							"&3/gen help &7- Shows this menu.");
 
-	public static void repairPaths(final CFG cfg) {
-		boolean altered = false;
-		for (MessagesX mX : MessagesX.values()) {
-			if (cfg.getFile().contains(mX.getPath())) {
-				if (Ut.isList(cfg.getFile(), mX.getPath())) {
-					mX.setMessages(cfg.getFile().getStringList(mX.getPath()).toArray(new String[0]));
-				} else {
-					mX.setMessages(cfg.getFile().getString(mX.getPath()));
-				}
-				continue;
-			}
-			cfg.getFile().set(mX.getPath(), mX.getMessages());
-			altered = true;
-		}
-		if (altered) {
-			cfg.saveFile();
-
-		}
-	}
-
 	private String[] messages;
 	private final String path;
 
 	MessagesX(final String path, final String... messages) {
+		Preconditions.checkArgument(messages.length >= 1, "messages array is empty or no message was found.");
 		this.messages = messages;
 		this.path = path;
 	}
@@ -79,4 +62,31 @@ public enum MessagesX {
 		return messages.length > 1;
 	}
 
+	public static void repairPaths(final CFG cfg) {
+		boolean altered = false;
+
+		for (MessagesX mX : MessagesX.values()) {
+
+			if (!cfg.getFile().contains(mX.getPath())) {
+				if (mX.getMessages().length > 1) {
+					cfg.getFile().set(mX.getPath(), mX.getMessages());
+				} else {
+					cfg.getFile().set(mX.getPath(), mX.getMessages()[0]);
+				}
+				altered = true;
+				continue;
+			}
+
+			if (Ut.isList(cfg.getFile(), mX.getPath())) {
+				mX.setMessages(cfg.getFile().getStringList(mX.getPath()).toArray(new String[0]));
+			} else {
+				mX.setMessages(cfg.getFile().getString(mX.getPath()));
+			}
+		}
+
+		if (altered) {
+			cfg.saveFile();
+		}
+
+	}
 }

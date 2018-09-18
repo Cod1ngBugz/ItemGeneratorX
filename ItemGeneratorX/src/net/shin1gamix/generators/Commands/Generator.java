@@ -30,6 +30,11 @@ public class Generator implements CommandExecutor {
 
 		final Player p = (Player) cs;
 
+		if (!p.isOp()) {
+			MessagesX.NO_PERMISSION.msg(p);
+			return true;
+		}
+
 		switch (args.length) {
 
 		case 0:
@@ -39,15 +44,16 @@ public class Generator implements CommandExecutor {
 		case 1:
 			if (args[0].equalsIgnoreCase("help")) {
 				MessagesX.HELP_FORMAT.msg(p);
-				return true;
+			} else if (args[0].equalsIgnoreCase("cancel")) {
+				this.getCore().getGenUt().cancelTasks();
 			}
 			return true;
 
 		case 3:
-			this.getCore().getGenUt().createGenX(p, args[1], args[2], null);
+			this.getCore().getGenUt().createGenX(p, p.getItemInHand().clone(), args[1], args[2], null);
 			return true;
 		case 4:
-			this.getCore().getGenUt().createGenX(p, args[1], args[2], args[3]);
+			this.getCore().getGenUt().createGenX(p, p.getItemInHand().clone(), args[1], args[2], args[3]);
 			return true;
 		default:
 			MessagesX.HELP_FORMAT.msg(p);

@@ -20,11 +20,12 @@ public class GenScheduler extends BukkitRunnable {
 	}
 
 	private final ItemStack item;
-	private double currentTime;
-	private final double startTime;
+	private int currentTime;
+	private final int startTime;
 	private final String id;
 	private final Location loc;
 	private int playerLimit;
+	private final long creationDate;
 
 	private static Map<String, GenScheduler> gens = new HashMap<>();
 
@@ -34,7 +35,7 @@ public class GenScheduler extends BukkitRunnable {
 
 	final Vector vel;
 
-	public GenScheduler(final Core main, final Location loc, final String id, final ItemStack item, final double time,
+	public GenScheduler(final Core main, final Location loc, final String id, final ItemStack item, final int time,
 			final int playerLimit) {
 		this.main = main;
 		this.loc = loc;
@@ -43,9 +44,8 @@ public class GenScheduler extends BukkitRunnable {
 		this.setCurrentTime(time);
 		this.startTime = this.getCurrentTime();
 		this.setPlayerLimit(playerLimit);
-		gens.put(id, this);
 		this.vel = new Vector(0, 0.25, 0);
-
+		this.creationDate = System.currentTimeMillis();
 	}
 
 	@Override
@@ -57,17 +57,17 @@ public class GenScheduler extends BukkitRunnable {
 		}
 
 		this.setCurrentTime(this.getStartTime());
-		if (this.getPlayerLimit() != 0 && this.getPlayerLimit() > Bukkit.getOnlinePlayers().size())
+		if (this.getPlayerLimit() > 0 && this.getPlayerLimit() > Bukkit.getOnlinePlayers().size()) {
 			return;
-
-		Bukkit.getWorld(loc.getWorld().getName()).dropItemNaturally(loc, item).setVelocity(vel);
+		}
+		this.getLoc().getWorld().dropItemNaturally(this.getLoc(), this.getItem()).setVelocity(this.vel);
 
 	}
 
 	/**
 	 * @return the currentTime
 	 */
-	private double getCurrentTime() {
+	private int getCurrentTime() {
 		return this.currentTime;
 	}
 
@@ -75,7 +75,7 @@ public class GenScheduler extends BukkitRunnable {
 	 * @param currentTime
 	 *            the currentTime to set
 	 */
-	public void setCurrentTime(double currentTime) {
+	public void setCurrentTime(final int currentTime) {
 		this.currentTime = currentTime;
 	}
 
@@ -90,7 +90,7 @@ public class GenScheduler extends BukkitRunnable {
 	/**
 	 * @return the startTime
 	 */
-	public double getStartTime() {
+	public int getStartTime() {
 		return this.startTime;
 	}
 
@@ -110,5 +110,12 @@ public class GenScheduler extends BukkitRunnable {
 	 */
 	public String getId() {
 		return this.id;
+	}
+
+	/**
+	 * @return the creationDate
+	 */
+	public long getCreationDate() {
+		return creationDate;
 	}
 }

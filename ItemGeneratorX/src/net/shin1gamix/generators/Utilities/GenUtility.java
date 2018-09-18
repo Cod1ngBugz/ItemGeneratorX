@@ -1,8 +1,8 @@
 package net.shin1gamix.generators.Utilities;
 
 import java.util.Map;
+import java.util.Set;
 
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -25,10 +25,11 @@ public class GenUtility {
 	// /gen create boss 0.01 0
 
 	public void createGenX(final Player p, final String id, final String timeAmount) {
-		createGenX(p, id, timeAmount, null);
+		createGenX(p, p.getItemInHand().clone(), id, timeAmount, null);
 	}
 
-	public void createGenX(final Player p, final String id, final String timeAmount, String playerLimitAmount) {
+	public void createGenX(final Player p, final ItemStack item, final String id, final String timeAmount,
+			String playerLimitAmount) {
 
 		if (!Ut.isAllowed(id)) {
 
@@ -40,21 +41,19 @@ public class GenUtility {
 			return;
 		}
 
-		final ItemStack item;
-		if (Bukkit.getVersion().contains("1.8")) {
-
-			item = p.getItemInHand();
-		} else {
-			item = p.getInventory().getItemInMainHand();
-		}
-
 		if (item.getType() == Material.AIR || item == null) {
 			MessagesX.INVALID_ITEM.msg(p);
 			return;
 		}
 
-		if (!Ut.isDouble(timeAmount)) {
+		if (!Ut.isInt(timeAmount)) {
 			MessagesX.NO_TIME_INSERTED.msg(p);
+			return;
+		}
+
+		final int time = Integer.valueOf(timeAmount);
+		if (time < 1) {
+
 			return;
 		}
 
@@ -64,15 +63,15 @@ public class GenUtility {
 		}
 
 		if (playerLimitAmount == null) {
-			playerLimitAmount = "0";
+			playerLimitAmount = "1";
 		}
 
-		final double time = Double.valueOf(timeAmount);
 		final int playerLimit = Integer.valueOf(playerLimitAmount);
 		final Location loc = p.getLocation();
 
 		final GenScheduler gensch = new GenScheduler(this.main, loc, id, item, time, playerLimit);
-		gensch.runTaskTimer(this.main, 0, 1);
+		GenScheduler.getGens().put(id, gensch);
+		gensch.runTaskTimer(this.main, 20, 1);
 	}
 
 	public boolean isGenerator(final String id) {
@@ -87,13 +86,18 @@ public class GenUtility {
 
 	public void saveMachines() {
 		final FileConfiguration file = this.main.getSettings().getFile();
-		GenScheduler.getGens().values().forEach(machine -> {
+		for (GenScheduler machine : GenScheduler.getGens().values()) {
+			if (file.contains("Generators." + machine.getId())) {
+				continue;
+			}
 			final String path = "Generators." + machine.getId() + ".";
+			file.set(path + "creation-time", machine.getCreationDate());
 			file.set(path + "time", machine.getStartTime()); // Setting the time
 			file.set(path + "player-limit", machine.getPlayerLimit());
 			file.set(path + "item", machine.getItem());
 			file.set(path + "location", machine.getLoc());
-		});
+		}
+		this.main.getSettings().saveFile();
 	}
 
 	public void cancelTasks() {
@@ -111,6 +115,22 @@ public class GenUtility {
 		// }
 
 		// TODO all generators were cancelled.
+
+	}
+
+	public void startsMachines() {
+		final FileConfiguration file = this.main.getSettings().getFile();
+		final Set<String> generators = file.getConfigurationSection("Generators").getKeys(false);
+		generators.forEach(id -> {
+			final String path = "Generators." + id + ".";
+			final Location loc = (Location) file.get(path + "location");
+			final ItemStack item = file.getItemStack(path + "item");
+			final int time = file.getInt(path + "time");
+			final int playerLimit = file.getInt(path + "player-limit");
+			final GenScheduler gensch = new GenScheduler(this.main, loc, id, item, time, playerLimit);
+			GenScheduler.getGens().put(id, gensch);
+			gensch.runTaskTimer(this.main, 20, 1);;
+		});
 
 	}
 }
