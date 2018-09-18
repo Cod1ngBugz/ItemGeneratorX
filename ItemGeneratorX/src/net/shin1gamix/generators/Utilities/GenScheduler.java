@@ -34,9 +34,10 @@ public class GenScheduler extends BukkitRunnable {
 	}
 
 	final Vector vel;
+	double velocity;
 
 	public GenScheduler(final Core main, final Location loc, final String id, final ItemStack item, final int time,
-			final int playerLimit) {
+			final int playerLimit, final double velocity) {
 		this.main = main;
 		this.loc = loc;
 		this.id = id;
@@ -44,7 +45,8 @@ public class GenScheduler extends BukkitRunnable {
 		this.setCurrentTime(time);
 		this.startTime = this.getCurrentTime();
 		this.setPlayerLimit(playerLimit);
-		this.vel = new Vector(0, 0.25, 0);
+		this.velocity = velocity;
+		this.vel = new Vector(0, this.velocity, 0);
 		this.creationDate = System.currentTimeMillis();
 	}
 
@@ -77,6 +79,14 @@ public class GenScheduler extends BukkitRunnable {
 	 */
 	public void setCurrentTime(final int currentTime) {
 		this.currentTime = currentTime;
+	}
+
+	public void setVelocity(final double velocity) {
+		this.velocity = velocity;
+	}
+
+	public double getVelocity() {
+		return this.velocity;
 	}
 
 	public ItemStack getItem() {
