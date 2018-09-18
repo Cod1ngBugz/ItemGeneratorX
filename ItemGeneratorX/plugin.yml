@@ -1,0 +1,9 @@
+name: ItemGeneratorX
+author: Shin1gamiX
+description: A custom plugin for WhiteWolf.
+version: 0.1
+main: net.shin1gamix.generators.Core
+commands:
+  generator:
+    description: The basic command.
+    aliases: [gen]
