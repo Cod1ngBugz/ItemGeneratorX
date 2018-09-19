@@ -1,9 +1,10 @@
 package net.shin1gamix.generators.Utilities;
 
+import java.io.File;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -12,6 +13,9 @@ import org.bukkit.Material;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+
+import com.gmail.filoghost.holographicdisplays.api.Hologram;
+import com.gmail.filoghost.holographicdisplays.api.HologramsAPI;
 
 import net.shin1gamix.generators.Core;
 import net.shin1gamix.generators.MessagesX;
@@ -60,7 +64,6 @@ public class GenUtility {
 			return;
 		}
 
-	
 		final int playerLimit;
 
 		if (playerLimitAmount == null || !Ut.isInt(playerLimitAmount)) {
@@ -71,7 +74,7 @@ public class GenUtility {
 
 		final double velocity;
 
-		if (vector == null&&!Ut.isDouble(vector)) {
+		if (vector == null || !Ut.isDouble(vector)) {
 			velocity = 0.25;
 		} else {
 			velocity = Double.valueOf(vector);
@@ -79,12 +82,11 @@ public class GenUtility {
 
 		final Location loc = p.getLocation();
 		final int time = Integer.valueOf(timeAmount);
-		
+
 		final GenScheduler gensch = new GenScheduler(this.main, loc, id, item, time < 1 ? 1 : time, playerLimit,
 				velocity);
 		GenScheduler.getGens().put(id, gensch);
 		gensch.runTaskTimer(this.main, 20, 1);
-
 		MessagesX.GEN_CREATED.msg(p, map);
 	}
 
@@ -104,6 +106,8 @@ public class GenUtility {
 			return;
 		}
 
+		gens.get(id).getHolo().delete();
+
 		if (gens.containsKey(id)) {
 			gens.get(id).cancel();
 			gens.remove(id);
@@ -120,7 +124,13 @@ public class GenUtility {
 	}
 
 	public void saveMachines() {
+		if (!new File(this.main.getDataFolder(), "config.yml").exists()) {
+			this.main.getSettings().setup(true);
+			return;
+		}
+
 		final FileConfiguration file = this.main.getSettings().getFile();
+		final Collection<GenScheduler> machines = GenScheduler.getGens().values();
 
 		final Set<String> offMachines = new HashSet<>();
 		for (final String confPath : file.getConfigurationSection("Generators").getKeys(false)) {
@@ -137,13 +147,16 @@ public class GenUtility {
 			file.set("Generators." + mach, null);
 		});
 
-		for (GenScheduler machine : GenScheduler.getGens().values()) {
+		for (GenScheduler machine : machines) {
+			final Hologram holo = machine.getHolo();
+			holo.delete();
+			HologramsAPI.unregisterPlaceholder(this.main, "%time-left" + machine.getId());
 			if (file.contains("Generators." + machine.getId())) {
 				continue;
 			}
 			final String path = "Generators." + machine.getId() + ".";
 			file.set(path + "creation-time", machine.getCreationDate());
-			file.set(path + "time", machine.getStartTime()); // Setting the time
+			file.set(path + "time", machine.getMaxTime()); // Setting the time
 			file.set(path + "player-limit", machine.getPlayerLimit()); // Setting player-limit
 			file.set(path + "item", machine.getItem()); // Settings the item
 			file.set(path + "location", machine.getLoc()); // Setting
@@ -159,22 +172,29 @@ public class GenUtility {
 			// TODO No generators were working.
 			return;
 		}
-		this.saveMachines();
-		for (final Entry<String, GenScheduler> gen : gens.entrySet()) {
-			gen.getValue().cancel();
-		}
-		gens.clear();
+		gens.values().forEach(gen -> gen.setWorking(false));
+		this.main.getHapi().refresh(false);
 	}
 
 	public void startTasks() {
-		this.startsMachines();
+		final Map<String, GenScheduler> gens = GenScheduler.getGens();
+		if (gens.isEmpty()) {
+			// TODO No generators were working.
+			return;
+		}
+		if (gens.values().stream().allMatch(gen -> gen.isWorking())) {
+			// All gens are working
+			return;
+		}
+
+		gens.values().forEach(gen -> gen.setWorking(true));
+		this.main.getHapi().refresh(false);
 	}
 
 	public void startsMachines() {
 		final FileConfiguration file = this.main.getSettings().getFile();
 		final Set<String> generators = file.getConfigurationSection("Generators").getKeys(false);
 		for (final String id : generators) {
-
 			if (GenScheduler.getGens().containsKey(id)) {
 				continue;
 			}
@@ -196,4 +216,5 @@ public class GenUtility {
 		}
 
 	}
+
 }

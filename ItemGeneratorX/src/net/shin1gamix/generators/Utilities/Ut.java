@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -245,4 +246,40 @@ public final class Ut {
 		return coll.stream().map(str -> tr(str)).collect(Collectors.toList());
 	}
 
+	public static String timeConversion(int totalSeconds) {
+		int MINUTES_IN_AN_HOUR = 60;
+		int SECONDS_IN_A_MINUTE = 60;
+		int hours = totalSeconds / MINUTES_IN_AN_HOUR / SECONDS_IN_A_MINUTE;
+		int minutes = (totalSeconds - (hours * MINUTES_IN_AN_HOUR * SECONDS_IN_A_MINUTE)) / SECONDS_IN_A_MINUTE;
+		int seconds = totalSeconds
+				- ((hours * MINUTES_IN_AN_HOUR * SECONDS_IN_A_MINUTE) + (minutes * SECONDS_IN_A_MINUTE));
+
+		if (hours != 0) {
+			return hours + "h, " + minutes + "m, " + seconds + "s";
+		} else {
+			if (minutes != 0) {
+				return minutes + "m, " + seconds + "s";
+			} else {
+				return seconds + "s";
+			}
+		}
+	}
+
+	public static String convertMilToSeconds(final long timeIn) {
+		long day = TimeUnit.MILLISECONDS.toDays(timeIn);
+		long hours = TimeUnit.MILLISECONDS.toHours(timeIn) - (day * 24);
+		long minutes = TimeUnit.MILLISECONDS.toMinutes(timeIn) - (TimeUnit.MILLISECONDS.toHours(timeIn) * 60);
+		long seconds = TimeUnit.MILLISECONDS.toSeconds(timeIn) - (TimeUnit.MILLISECONDS.toMinutes(timeIn) * 60);
+		if (day != 0) {
+			return String.valueOf(day) + "d, " + String.valueOf(hours) + "h, " + String.valueOf(minutes) + "m, "
+					+ String.valueOf(seconds) + "s";
+		} else if (hours != 0) {
+			return String.valueOf(hours) + "h, " + String.valueOf(minutes) + "m, " + String.valueOf(seconds) + "s";
+		} else if (minutes != 0) {
+			return String.valueOf(minutes) + "m, " + String.valueOf(seconds) + "s";
+		} else {
+			return String.valueOf(seconds) + "s";
+		}
+
+	}
 }

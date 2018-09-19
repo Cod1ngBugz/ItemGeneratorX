@@ -9,6 +9,8 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
+import com.gmail.filoghost.holographicdisplays.api.Hologram;
+
 import net.shin1gamix.generators.Core;
 
 public class GenScheduler extends BukkitRunnable {
@@ -21,11 +23,13 @@ public class GenScheduler extends BukkitRunnable {
 
 	private final ItemStack item;
 	private int currentTime;
-	private final int startTime;
+	private final int maxTime;
 	private final String id;
 	private final Location loc;
 	private int playerLimit;
 	private final long creationDate;
+	private final Hologram holo;
+	private boolean working;
 
 	private static Map<String, GenScheduler> gens = new HashMap<>();
 
@@ -43,25 +47,32 @@ public class GenScheduler extends BukkitRunnable {
 		this.id = id;
 		this.item = item;
 		this.setCurrentTime(time);
-		this.startTime = this.getCurrentTime();
+		this.maxTime = this.getCurrentTime();
 		this.setPlayerLimit(playerLimit);
 		this.velocity = velocity;
 		this.vel = new Vector(0, this.velocity, 0);
 		this.creationDate = System.currentTimeMillis();
+		this.setWorking(true);
+		this.holo = this.getCore().getHapi().startHoloTasks(this);
+
 	}
 
 	@Override
 	public void run() {
-
-		if (this.getCurrentTime() >= 1) {
-			this.setCurrentTime(this.getCurrentTime() - 1);
+		if (!this.isWorking()) {
 			return;
 		}
 
-		this.setCurrentTime(this.getStartTime());
 		if (this.getPlayerLimit() > 0 && this.getPlayerLimit() > Bukkit.getOnlinePlayers().size()) {
 			return;
 		}
+		
+		if (this.getCurrentTime() <= this.getMaxTime()) {
+			this.setCurrentTime(this.getCurrentTime() + 1);
+			return;
+		}
+
+		this.setCurrentTime(0);
 		this.getLoc().getWorld().dropItemNaturally(this.getLoc(), this.getItem()).setVelocity(this.vel);
 
 	}
@@ -69,7 +80,7 @@ public class GenScheduler extends BukkitRunnable {
 	/**
 	 * @return the currentTime
 	 */
-	private int getCurrentTime() {
+	public int getCurrentTime() {
 		return this.currentTime;
 	}
 
@@ -98,13 +109,6 @@ public class GenScheduler extends BukkitRunnable {
 	}
 
 	/**
-	 * @return the startTime
-	 */
-	public int getStartTime() {
-		return this.startTime;
-	}
-
-	/**
 	 * @return the playerLimit
 	 */
 	public int getPlayerLimit() {
@@ -127,5 +131,38 @@ public class GenScheduler extends BukkitRunnable {
 	 */
 	public long getCreationDate() {
 		return creationDate;
+	}
+
+	/**
+	 * @return the holo
+	 */
+	public Hologram getHolo() {
+		return holo;
+	}
+
+	/**
+	 * @return the working
+	 */
+	public boolean isWorking() {
+		return working;
+	}
+
+	/**
+	 * @param working
+	 *            the working to set
+	 */
+	public void setWorking(boolean working) {
+		this.working = working;
+	}
+
+	public boolean areEnoughPlayers() {
+		return this.getPlayerLimit() <= Bukkit.getOnlinePlayers().size();
+	}
+
+	/**
+	 * @return the maxTime
+	 */
+	public int getMaxTime() {
+		return maxTime;
 	}
 }

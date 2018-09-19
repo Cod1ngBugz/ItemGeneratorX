@@ -14,15 +14,13 @@ public class CFG {
 	private FileConfiguration config;
 	private File cfile;
 
-	private final boolean saveResource;
-
-	public CFG(final JavaPlugin p, final String string, final boolean saveResource) {
+	public CFG(final JavaPlugin p, final String string) {
 		this.p = p;
 		this.filename = string + ".yml";
-		this.saveResource = saveResource;
+
 	}
 
-	public void setup() {
+	public void setup(final boolean saveResource) {
 
 		if (!this.p.getDataFolder().exists()) {
 			this.p.getDataFolder().mkdir();
@@ -36,7 +34,7 @@ public class CFG {
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-			if (this.saveResource) {
+			if (saveResource) {
 				this.p.saveResource(this.filename, true);
 			}
 

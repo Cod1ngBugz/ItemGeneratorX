@@ -1,14 +1,21 @@
-Hologram:
+Holograms:
   materials:
     stone: 'STONE'
     dblock: 'DIAMOND_BLOCK'
     eblock: 'EMERALD_BLOCK'
   Enabled:
-    - '%eblock%' # This has to be alone, if it's not alone, it will not be added as an item.
-    - '&7&m------------------'
-    - '&7\- &2Spawning &3%item% &7-/'
-    - '    &6%time-left%'
-    - '%dblock%'
+    Big-Time:
+      - '%eblock%' # This has to be alone, if it's not alone, it will not be added as an item.
+      - '&7&m------------------'
+      - '&7\- &2Spawning &3%item-%machine%% &7-/'
+      - '    &6%time-left-%machine%%'
+      - '%dblock%'
+    Small-Time:
+      - '%eblock%' # This has to be alone, if it's not alone, it will not be added as an item.
+      - '&7&m------------------'
+      - '&7\- &2Spawning &3%item-%machine%% &7-/'
+      - '&aItem spawns rapidly.'
+      - '%dblock%'
   Disabled:
     - '&7&m------------------'
     - '&7\- &3Generator Status &7-/'
@@ -17,8 +24,4 @@ Hologram:
     - '&7&m------------------'
     - '&7\- &3Generator Status &7-/'
     - '&6Waiting for players &3%online%&7/&3%needed%'
-  Error:
-    - '&cSomething went wrong with'
-    - '&cthe current generator...'
-    - '&4Please contact an admin!'
 Generators: {}
