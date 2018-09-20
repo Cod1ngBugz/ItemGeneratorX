@@ -12,14 +12,15 @@ import net.shin1gamix.generators.Utilities.Ut;
 public enum MessagesX {
 
 	NO_PERMISSION("Messages.No-Permission", "&cYou are not allowed to use this command."),
-	NOT_MACHINE("Messages.Not-Machine", "&cThe id: &e%id% &cis not a machine!"),
+	NOT_GENERATOR("Messages.Not-Generator", "&cThe id: &e%id% &cis not a generator!"),
 	INVALID_ID("Messages.Invalid-Id", "&cThe id: &e%id% &ccontains some invalid characters."),
 	GEN_REMOVED("Messages.Generator-Removed", "&cThe generator &e%id% &chas been removed."),
 	GEN_CREATED("Messages.Generator-Created", "&7A generator has been created with the id &e%id%&7."),
-	GEN_EXISTS("Messages.Generator-Already-Exists","&cThe generator with id &e%id% &calready exists!"),
+	GEN_ALREADY_EXISTS("Messages.Generator-Already-Exists","&cThe generator with id &e%id% &calready exists!"),
 	NO_TIME_INSERTED("Messages.No-Time-Inserted","&cYou'll need to specify the time required for the generator to produce items!"),
 	INVALID_TIME("Messages.Invalid-Time-Inserted","&cThe time needs to be an integer!"),
 	INVALID_ITEM("Messages.Invalid-Item","&cYou are currently holding an invalid item or none at all."),
+	PLAYER_ONLY("Messages.Players-Only","&cOnly players are allowed to do this!"),
 	INVALID_ARGUEMENTS("Messages.Invalid-Arguements","&cYou must have made a typo, take a look at your command!"),
 	GEN_REMOVE_HELP("Messages.Generator-Remove-Help","&cUsage: &e/gen remove <id>"),
 	TASKS_CANCELLED("Messages.Generators-Disabled","&cAll generators have been disabled!"),
@@ -75,34 +76,26 @@ public enum MessagesX {
 	}
 
 	private boolean isMultiLined() {
-		return messages.length > 1;
+		return this.messages.length > 1;
 	}
 
 	public static void repairPaths(final CFG cfg) {
-		boolean altered = false;
-
 		for (MessagesX mX : MessagesX.values()) {
-
 			if (!cfg.getFile().contains(mX.getPath())) {
 				if (mX.getMessages().length > 1) {
 					cfg.getFile().set(mX.getPath(), mX.getMessages());
 				} else {
 					cfg.getFile().set(mX.getPath(), mX.getMessages()[0]);
 				}
-				altered = true;
 				continue;
 			}
-
 			if (Ut.isList(cfg.getFile(), mX.getPath())) {
 				mX.setMessages(cfg.getFile().getStringList(mX.getPath()).toArray(new String[0]));
 			} else {
 				mX.setMessages(cfg.getFile().getString(mX.getPath()));
 			}
 		}
-
-		if (altered) {
-			cfg.saveFile();
-		}
-
+		cfg.saveFile();
 	}
+
 }

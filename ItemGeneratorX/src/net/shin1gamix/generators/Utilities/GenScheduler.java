@@ -5,11 +5,13 @@ import java.util.Map;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
 import com.gmail.filoghost.holographicdisplays.api.Hologram;
+import com.gmail.filoghost.holographicdisplays.api.HologramsAPI;
 
 import net.shin1gamix.generators.Core;
 
@@ -17,8 +19,10 @@ public class GenScheduler extends BukkitRunnable {
 
 	private Core main;
 
-	public Core getCore() {
-		return this.main;
+	private static Map<String, GenScheduler> gens = new HashMap<>();
+
+	public static Map<String, GenScheduler> getGens() {
+		return gens;
 	}
 
 	private final ItemStack item;
@@ -29,51 +33,55 @@ public class GenScheduler extends BukkitRunnable {
 	private int playerLimit;
 	private final long creationDate;
 	private final Hologram holo;
-	private boolean working;
-
-	private static Map<String, GenScheduler> gens = new HashMap<>();
-
-	public static Map<String, GenScheduler> getGens() {
-		return gens;
-	}
-
-	final Vector vel;
-	double velocity;
+	private boolean working = true;
+	private final Vector vel;
+	private double velocity;
 
 	public GenScheduler(final Core main, final Location loc, final String id, final ItemStack item, final int time,
 			final int playerLimit, final double velocity) {
-		this.main = main;
-		this.loc = loc;
-		this.id = id;
-		this.item = item;
-		this.setCurrentTime(time);
-		this.maxTime = this.getCurrentTime();
-		this.setPlayerLimit(playerLimit);
-		this.velocity = velocity;
-		this.vel = new Vector(0, this.velocity, 0);
-		this.creationDate = System.currentTimeMillis();
-		this.setWorking(true);
-		this.holo = this.getCore().getHapi().startHoloTasks(this);
+		this.main = main; // Main instance
+		this.loc = loc; // Gen location
+		this.id = id; // Gen id
+		this.item = item; // Gen item
+
+		this.setCurrentTime(0); // Resetting time
+
+		this.maxTime = time; // Setting max time
+
+		this.setPlayerLimit(playerLimit); // Setting player limit.
+
+		this.velocity = velocity; // Setting velocity
+		this.vel = new Vector(0, this.velocity, 0); // Setting vector with velocity
+
+		this.creationDate = System.currentTimeMillis(); // Creation time
+
+		this.holo = this.main.getHapi().startHoloTasks(this); // Adding hologram
+
+		gens.put(id, this);
 
 	}
 
 	@Override
 	public void run() {
+		/* Is the machine working? */
 		if (!this.isWorking()) {
 			return;
 		}
 
-		if (this.getPlayerLimit() > 0 && this.getPlayerLimit() > Bukkit.getOnlinePlayers().size()) {
+		/* Are there enough players? */
+		if (!this.areEnoughPlayers()) {
 			return;
 		}
-		
+
+		/* Is the current time less than max? Meaning it's not ready to drop yet. */
 		if (this.getCurrentTime() <= this.getMaxTime()) {
 			this.setCurrentTime(this.getCurrentTime() + 1);
 			return;
 		}
 
+		/* Rest the time and drop item */
 		this.setCurrentTime(0);
-		this.getLoc().getWorld().dropItemNaturally(this.getLoc(), this.getItem()).setVelocity(this.vel);
+		this.getLoc().getWorld().dropItemNaturally(this.getLoc(), this.getItem()).setVelocity(this.vel); // Drop item
 
 	}
 
@@ -156,7 +164,7 @@ public class GenScheduler extends BukkitRunnable {
 	}
 
 	public boolean areEnoughPlayers() {
-		return this.getPlayerLimit() <= Bukkit.getOnlinePlayers().size();
+		return this.getPlayerLimit() > 0 && this.getPlayerLimit() <= Bukkit.getOnlinePlayers().size();
 	}
 
 	/**
@@ -164,5 +172,21 @@ public class GenScheduler extends BukkitRunnable {
 	 */
 	public int getMaxTime() {
 		return maxTime;
+	}
+
+	public void saveMachine(final FileConfiguration file) {
+		final Hologram holo = this.getHolo();
+		holo.delete();
+		HologramsAPI.unregisterPlaceholder(this.main, "%time-left-" + this.getId() + "%");
+		if (file.contains("Generators." + this.getId())) {
+			return;
+		}
+		final String path = "Generators." + this.getId() + ".";
+		file.set(path + "creation-time", this.getCreationDate());
+		file.set(path + "time", this.getMaxTime()); // Setting the time
+		file.set(path + "player-limit", this.getPlayerLimit()); // Setting player-limit
+		file.set(path + "item", this.getItem()); // Settings the item
+		file.set(path + "location", this.getLoc()); // Setting
+		file.set(path + "velocity", this.getVelocity());
 	}
 }

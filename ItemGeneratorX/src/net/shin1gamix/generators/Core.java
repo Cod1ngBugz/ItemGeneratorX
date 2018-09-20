@@ -22,51 +22,30 @@ public class Core extends JavaPlugin {
 	@Override
 	public void onEnable() {
 
+		/* Load all files */
 		this.saveDefaultConfig();
 		this.settings.setup(true);
-		this.messages.setup(false);
+		this.loadMessages();
+
+		/* Since files are loaded, load all generators*/
+		this.getGenUt().startGenerators();
+		
+		/* Initialize the HAPI */
+		hapi = new HologramAPI(this);
 
 		new Generator(this);
+	}
 
+	private void loadMessages() {
+		this.messages.setup(false);
 		MessagesX.repairPaths(this.getMessages());
-		hapi = new HologramAPI(this);
-		this.getGenUt().startsMachines();
-		/*
-		 * new BukkitRunnable() {
-		 * 
-		 * @Override public void run() { for (final GenScheduler mach :
-		 * GenScheduler.getGens().values()) { final Hologram hologram = mach.getHolo();
-		 * for (int i = 0; i < hologram.size(); i++) { final HologramLine hl =
-		 * hologram.getLine(i); if (!(hl instanceof TextLine)) continue; final TextLine
-		 * line = (TextLine) hl; if (line.getText().contains("%time-left%")) {
-		 * hologram.insertTextLine(i, line.getText()); } } } } }.runTaskTimer(this,
-		 * 100,50);
-		 */
-
-		HologramsAPI.registerPlaceholder(this, "%online%", .5, new PlaceholderReplacer() {
-
-			@Override
-			public String update() {
-				return Bukkit.getOnlinePlayers().size() + "";
-			}
-		});
-		HologramsAPI.registerPlaceholder(this, "%needed%", .5, new PlaceholderReplacer() {
-
-			@Override
-			public String update() {
-				return Bukkit.getMaxPlayers() + "";
-			}
-		});
 	}
 
 	@Override
 	public void onDisable() {
-		this.getGenUt().saveMachines();
-		try {
-			HologramsAPI.getRegisteredPlaceholders(this).clear();
-			HologramsAPI.unregisterPlaceholders(this);
-		} catch (Exception e) {
-		}
+		this.getGenUt().saveGenerators();
+		HologramsAPI.unregisterPlaceholders(this);
+
 	}
 
 	public CFG getSettings() {
