@@ -18,7 +18,7 @@ public class GenCommand implements CommandExecutor {
 
 	public GenCommand(Core main) {
 		this.main = main;
-		main.getCommand("generator").setExecutor(this);
+		main.getCommand("itemgeneratorx").setExecutor(this);
 	}
 
 	@Override
