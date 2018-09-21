@@ -15,56 +15,50 @@ import com.gmail.filoghost.holographicdisplays.api.HologramsAPI;
 
 import net.shin1gamix.generators.Core;
 
-public class GenScheduler extends BukkitRunnable {
+public class Generator extends BukkitRunnable {
 
 	private Core main;
 
-	private static Map<String, GenScheduler> gens = new HashMap<>();
+	private static Map<String, Generator> gens = new HashMap<>();
 
-	public static Map<String, GenScheduler> getGens() {
+	public static Map<String, Generator> getGens() {
 		return gens;
 	}
 
-	private final ItemStack item;
-	private int currentTime;
-	private final int maxTime;
 	private final String id;
 	private final Location loc;
+	private final ItemStack item;
+
+	private final int maxTime;
 	private int playerLimit;
+	private int currentTime;
+	private double velocity;
 	private final long creationDate;
 	private final Hologram holo;
 	private boolean working = true;
 	private final Vector vel;
-	private double velocity;
 
-	public GenScheduler(final Core main, final Location loc, final String id, final ItemStack item, final int time,
+	public Generator(final Core main, final Location loc, final String id, final ItemStack item, final int time,
 			final int playerLimit, final double velocity) {
 		this.main = main; // Main instance
 		this.loc = loc; // Gen location
 		this.id = id; // Gen id
 		this.item = item; // Gen item
-
 		this.setCurrentTime(0); // Resetting time
-
 		this.maxTime = time; // Setting max time
-
 		this.setPlayerLimit(playerLimit); // Setting player limit.
-
 		this.velocity = velocity; // Setting velocity
 		this.vel = new Vector(0, this.velocity, 0); // Setting vector with velocity
-
 		this.creationDate = System.currentTimeMillis(); // Creation time
-
 		this.holo = this.main.getHapi().startHoloTasks(this); // Adding hologram
-
-		gens.put(id, this);
+		gens.put(id, this); // Adds the generator in the map.
 
 	}
 
 	@Override
 	public void run() {
-		/* Is the machine working? */
-		if (!this.isWorking()) {
+		/* Is the generator working? */
+		if (!this.working) {
 			return;
 		}
 
@@ -74,19 +68,40 @@ public class GenScheduler extends BukkitRunnable {
 		}
 
 		/* Is the current time less than max? Meaning it's not ready to drop yet. */
-		if (this.getCurrentTime() <= this.getMaxTime()) {
-			this.setCurrentTime(this.getCurrentTime() + 1);
+		if (this.currentTime <= this.maxTime) {
+			this.setCurrentTime(this.currentTime + 1);
 			return;
 		}
 
 		/* Rest the time and drop item */
 		this.setCurrentTime(0);
-		this.getLoc().getWorld().dropItemNaturally(this.getLoc(), this.getItem()).setVelocity(this.vel); // Drop item
+		this.loc.getWorld().dropItemNaturally(this.loc, this.item).setVelocity(this.vel); // Drop item
 
 	}
 
 	/**
-	 * @return the currentTime
+	 * @param file
+	 *            -> The file to save the generator's stats.
+	 */
+	public void saveGenerator(final FileConfiguration file) {
+		final Hologram holo = this.getHolo();
+		holo.delete();
+		HologramsAPI.unregisterPlaceholder(this.main, "%time-left-" + this.getId() + "%");
+		if (file.contains("Generators." + this.getId())) {
+			return;
+		}
+		final String path = "Generators." + this.getId() + ".";
+		file.set(path + "creation-time", this.getCreationDate());
+		file.set(path + "time", this.getMaxTime()); // Setting the time
+		file.set(path + "player-limit", this.getPlayerLimit()); // Setting player-limit
+		file.set(path + "item", this.getItem()); // Settings the item
+		file.set(path + "location", this.getLoc()); // Setting
+		file.set(path + "velocity", this.getVelocity());
+	}
+
+	/**
+	 * @return the currentTime -> An integer that is less than {@link #maxTime}
+	 *         which increases per tick.
 	 */
 	public int getCurrentTime() {
 		return this.currentTime;
@@ -94,48 +109,69 @@ public class GenScheduler extends BukkitRunnable {
 
 	/**
 	 * @param currentTime
-	 *            the currentTime to set
+	 *            -> The currentTime to set
 	 */
 	public void setCurrentTime(final int currentTime) {
+		if (currentTime > getMaxTime()) {
+			this.setCurrentTime(this.getMaxTime());
+			return;
+		}
 		this.currentTime = currentTime;
 	}
 
+	/**
+	 * @param velocity
+	 *            -> The velocity of the item's height.
+	 */
 	public void setVelocity(final double velocity) {
 		this.velocity = velocity;
 	}
 
+	/**
+	 * @return the velocity -> The item's current velocity. Default: 0X, 0.25Y, 0Z
+	 */
 	public double getVelocity() {
 		return this.velocity;
 	}
 
+	/**
+	 * @return the item -> The ItemStack that should be dropped.
+	 */
 	public ItemStack getItem() {
 		return item;
 	}
 
+	/**
+	 * @return the loc -> The location where the item is going to be dropped.
+	 */
 	public Location getLoc() {
 		return loc;
 	}
 
 	/**
-	 * @return the playerLimit
+	 * @return the playerLimit -> Amount of users needed for the generator to work.
 	 */
 	public int getPlayerLimit() {
 		return this.playerLimit;
 	}
 
+	/**
+	 * @param playerLimit
+	 *            -> Sets the amount of users needed for the generator to work.
+	 */
 	public void setPlayerLimit(int playerLimit) {
 		this.playerLimit = playerLimit;
 	}
 
 	/**
-	 * @return the id
+	 * @return the id -> The generator's ID
 	 */
 	public String getId() {
 		return this.id;
 	}
 
 	/**
-	 * @return the creationDate
+	 * @return the creationDate -> Time in millis
 	 */
 	public long getCreationDate() {
 		return creationDate;
@@ -157,36 +193,25 @@ public class GenScheduler extends BukkitRunnable {
 
 	/**
 	 * @param working
-	 *            the working to set
+	 *            -> Set the generator to either disabled or enabled.
 	 */
 	public void setWorking(boolean working) {
 		this.working = working;
 	}
 
+	/**
+	 * @return boolean -> Whether there are enough players for the generator to run.
+	 */
 	public boolean areEnoughPlayers() {
 		return this.getPlayerLimit() > 0 && this.getPlayerLimit() <= Bukkit.getOnlinePlayers().size();
 	}
 
 	/**
-	 * @return the maxTime
+	 * @return the maxTime -> An integer that if reached by
+	 *         {@link #getCurrentTime()} it will execute {@link #run()}
 	 */
 	public int getMaxTime() {
 		return maxTime;
 	}
 
-	public void saveMachine(final FileConfiguration file) {
-		final Hologram holo = this.getHolo();
-		holo.delete();
-		HologramsAPI.unregisterPlaceholder(this.main, "%time-left-" + this.getId() + "%");
-		if (file.contains("Generators." + this.getId())) {
-			return;
-		}
-		final String path = "Generators." + this.getId() + ".";
-		file.set(path + "creation-time", this.getCreationDate());
-		file.set(path + "time", this.getMaxTime()); // Setting the time
-		file.set(path + "player-limit", this.getPlayerLimit()); // Setting player-limit
-		file.set(path + "item", this.getItem()); // Settings the item
-		file.set(path + "location", this.getLoc()); // Setting
-		file.set(path + "velocity", this.getVelocity());
-	}
 }

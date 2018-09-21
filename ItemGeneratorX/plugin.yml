@@ -5,6 +5,6 @@ version: 0.1
 main: net.shin1gamix.generators.Core
 softdepend: [HolographicDisplays]
 commands:
-  generator:
+  itemgeneratorx:
     description: The basic command.
-    aliases: [gen]
+    aliases: [generator, gen, generatorx, genx, itemgenerator]

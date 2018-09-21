@@ -10,19 +10,20 @@ import org.bukkit.entity.Player;
 
 import net.shin1gamix.generators.Core;
 import net.shin1gamix.generators.MessagesX;
-import net.shin1gamix.generators.Utilities.GenScheduler;
+import net.shin1gamix.generators.Utilities.Generator;
 
-public class Generator implements CommandExecutor {
+public class GenCommand implements CommandExecutor {
 
-	private Core main;
+	private final Core main;
 
-	public Generator(Core main) {
+	public GenCommand(Core main) {
 		this.main = main;
 		main.getCommand("generator").setExecutor(this);
 	}
 
 	@Override
 	public boolean onCommand(final CommandSender cs, final Command c, final String lb, final String[] args) {
+		/* Is a non player attempting to use the command? */
 		if (!(cs instanceof Player)) {
 			MessagesX.PLAYER_ONLY.msg(cs);
 			return true;
@@ -30,6 +31,7 @@ public class Generator implements CommandExecutor {
 
 		final Player p = (Player) cs;
 
+		/* Is the player an operator? */
 		if (!p.isOp()) {
 			MessagesX.NO_PERMISSION.msg(p);
 			return true;
@@ -37,50 +39,77 @@ public class Generator implements CommandExecutor {
 
 		switch (args.length) {
 
-		case 0:
+		case 0: // Assume player typed /gen
 
+			/* Send help format message. */
 			MessagesX.HELP_FORMAT.msg(p);
 			return true;
 
-		case 1:
+		case 1: // Assume player typed /gen args0
+
+			/* Send help format message. */
 			if (args[0].equalsIgnoreCase("help")) {
 				MessagesX.HELP_FORMAT.msg(p);
-			} else if (args[0].equalsIgnoreCase("cancel")) {
-				this.main.getGenUt().disableGenerators();
-				MessagesX.TASKS_CANCELLED.msg(p);
-			} else if (args[0].equalsIgnoreCase("reload")) {
+			}
+
+			/* Disable all generators. */
+			else if (args[0].equalsIgnoreCase("cancel")) {
+				this.main.getGenUt().disableGenerators(p);
+			}
+
+			/* Enable all generators. */
+			else if (args[0].equalsIgnoreCase("start")) {
+				this.main.getGenUt().enableGenerators(p);
+			}
+
+			/* Reload all files. */
+			else if (args[0].equalsIgnoreCase("reload")) {
 				this.reloadFiles(p);
-			} else if (args[0].equalsIgnoreCase("start")) {
-				this.main.getGenUt().enableGenerators();
-				MessagesX.TASKS_CONTINUE.msg(p);
-			} else if (args[0].equalsIgnoreCase("remove")) {
+			}
+
+			/* Send usage of remove command. */
+			else if (args[0].equalsIgnoreCase("remove")) {
 				MessagesX.GEN_REMOVE_HELP.msg(p);
-			} else {
+			}
+
+			/* No useful command found. Send invalid arg message. */
+			else {
 				MessagesX.INVALID_ARGUEMENTS.msg(p);
 			}
 
 			return true;
-		case 2:
 
+		case 2: // Assume player typed /gen args0 args1
+
+			/* Attempt to remove a generator completely. */
 			if (args[0].equalsIgnoreCase("remove")) {
 				this.main.getGenUt().removeGenerator(p, args[1]);
-			} else if (args[0].equalsIgnoreCase("tp")) {
+			}
+
+			/* Attempt to teleport to a generator. */
+			else if (args[0].equalsIgnoreCase("tp")) {
 				this.genTeleport(p, args);
-			} else {
+			}
+
+			/* No useful command found. Send invalid arg message. */
+			else {
 				MessagesX.INVALID_ARGUEMENTS.msg(p);
 			}
 
 			return true;
 
-		case 3:
+		/* Create a generator with all available arguements. */
+		case 3: // Assume player typed /gen create <id>
 			this.main.getGenUt().createGenerator(p, p.getItemInHand().clone(), args[1], args[2]);
 			return true;
-		case 4:
+		case 4: // Assume player typed /gen create <id> <max-time> <player-limit>
 			this.main.getGenUt().createGenerator(p, p.getItemInHand().clone(), args[1], args[2], args[3]);
 			return true;
-		case 5:
+		case 5: // Assume player typed /gen create <id> <max-time> <player-limit> <velocity>
 			this.main.getGenUt().createGenerator(p, p.getItemInHand().clone(), args[1], args[2], args[3], args[4]);
 			return true;
+
+		/* No useful command found. Send invalid arg message. */
 		default:
 			MessagesX.INVALID_ARGUEMENTS.msg(p);
 			return true;
@@ -88,10 +117,11 @@ public class Generator implements CommandExecutor {
 		}
 	}
 
+	/* Reloads and fixes all files and holograms. */
 	private void reloadFiles(final Player p) {
 		/* Reload config.yml and Refresh holograms */
 		this.main.getSettings().reloadFile();
-		this.main.getHapi().refresh();
+		this.main.getHapi().refreshAll();
 
 		/* Reload messages.yml and Repair message paths */
 		this.main.getMessages().reloadFile();
@@ -101,11 +131,12 @@ public class Generator implements CommandExecutor {
 		MessagesX.PLUGIN_RELOAD.msg(p);
 	}
 
+	/* Attempts to teleport a player in the location of the generator. */
 	private void genTeleport(final Player p, final String[] args) {
 		final String id = args[1];
 
 		/* Returns null if generator doesn't exist in map */
-		final GenScheduler generator = this.main.getGenUt().getGenerator(id);
+		final Generator generator = this.main.getGenUt().getGenerator(id);
 
 		if (generator == null) {
 			MessagesX.INVALID_ID.msg(p);
@@ -113,7 +144,6 @@ public class Generator implements CommandExecutor {
 		}
 
 		p.teleport(generator.getLoc());
-
 		final Map<String, String> map = new HashMap<>();
 		map.put("%id%", args[1]);
 		MessagesX.PLAYER_TELEPORT.msg(p, map);

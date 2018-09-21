@@ -53,28 +53,28 @@ public class HologramAPI implements Listener {
 		return mat == null ? null : path;
 	}
 
-	public Hologram startHoloTasks(final GenScheduler machine) {
-		final Location loc = machine.getLoc().clone();
+	public Hologram startHoloTasks(final Generator generator) {
+		final Location loc = generator.getLoc().clone();
 
 		final Hologram hologram = HologramsAPI.createHologram(this.getCore(), loc.add(0, 4, 0));
 		hologram.setAllowPlaceholders(true);
 
-		final String plc = this.getTimeString(machine.getId());
+		final String plc = this.getTimeString(generator.getId());
 
 		HologramsAPI.registerPlaceholder(this.getCore(), plc, .1, new PlaceholderReplacer() {
 			@Override
 			public String update() {
-				final int max = machine.getMaxTime();
-				final double current = machine.getCurrentTime();
+				final int max = generator.getMaxTime();
+				final double current = generator.getCurrentTime();
 				return ((int) Math.floor((current / max) * 100)) + "%";
 			}
 		});
 
-		refreshLater(machine);
+		refreshLater(generator);
 		return hologram;
 	}
 
-	private void addLine(final GenScheduler mach, final FileConfiguration file, final Hologram hologram,
+	private void addLine(final Generator mach, final FileConfiguration file, final Hologram hologram,
 			final String line) {
 		final String mat = this.getMaterial(line);
 
@@ -82,7 +82,7 @@ public class HologramAPI implements Listener {
 			final Map<String, String> map = new HashMap<>();
 			map.put("%item-" + mach.getId() + "%",
 					Ut.capFirst(mach.getItem().getType().name().replace("_", " ").toLowerCase(), true));
-			map.put("%machine%", mach.getId());
+			map.put("%generator%", mach.getId());
 			map.put("%online%", Bukkit.getOnlinePlayers().size() + "");
 			map.put("%needed%", mach.getPlayerLimit() + "");
 
@@ -91,69 +91,6 @@ public class HologramAPI implements Listener {
 			hologram.appendItemLine(
 					new ItemStack(Material.matchMaterial(file.getString("Holograms.materials." + mat))));
 		}
-	}
-
-	public void refresh(final GenScheduler machine) {
-		final FileConfiguration file = this.getCore().getSettings().getFile();
-
-		if (file == null || GenScheduler.getGens().isEmpty()) {
-			return;
-		}
-		final Hologram hologram = machine.getHolo();
-		hologram.clearLines();
-
-		final List<String> small = file.getStringList("Holograms.Enabled.Small-Time");
-		final List<String> big = file.getStringList("Holograms.Enabled.Small-Time");
-		final List<String> disabled = file.getStringList("Holograms.Disabled");
-		final List<String> enough = file.getStringList("Holograms.Not-Enough-Players");
-
-		if (machine.isWorking()) {
-			if (machine.areEnoughPlayers()) {
-				if (machine.getMaxTime() < 20) {
-					if (small.isEmpty()) {
-						return;
-					}
-					small.forEach(line -> addLine(machine, file, hologram, line));
-				} else {
-					if (big.isEmpty()) {
-						return;
-					}
-					big.forEach(line -> addLine(machine, file, hologram, line));
-				}
-			} else {
-				if (enough.isEmpty()) {
-					return;
-				}
-				enough.forEach(line -> addLine(machine, file, hologram, line));
-			}
-		} else {
-			if (disabled.isEmpty()) {
-				return;
-			}
-			disabled.forEach(line -> addLine(machine, file, hologram, line));
-		}
-	}
-
-	public void refresh() {
-		GenScheduler.getGens().values().forEach(mach -> refresh(mach));
-	}
-
-	public void refreshLater() {
-		new BukkitRunnable() {
-			@Override
-			public void run() {
-				refresh();
-			}
-		}.runTaskLater(this.main, 1);
-	}
-
-	public void refreshLater(final GenScheduler machine) {
-		new BukkitRunnable() {
-			@Override
-			public void run() {
-				refresh(machine);
-			}
-		}.runTaskLater(this.main, 1);
 	}
 
 	public String getTimeString(final String id) {
@@ -173,4 +110,80 @@ public class HologramAPI implements Listener {
 	private void onJoin(final PlayerJoinEvent e) {
 		this.refreshLater();
 	}
+
+	public void refreshAll() {
+		Generator.getGens().values().forEach(generator -> refresh(generator));
+	}
+
+	public void refreshLater() {
+		new BukkitRunnable() {
+			@Override
+			public void run() {
+				refreshAll();
+			}
+		}.runTaskLater(this.main, 1);
+	}
+
+	public void refreshLater(final Generator generator) {
+		new BukkitRunnable() {
+			@Override
+			public void run() {
+				refresh(generator);
+			}
+		}.runTaskLater(this.main, 1);
+	}
+
+	public void refresh(final Generator generator) {
+		final FileConfiguration file = this.getCore().getSettings().getFile();
+
+		/* Is the file in any case null or are there no generators? */
+		if (file == null || Generator.getGens().isEmpty()) {
+			return;
+		}
+
+		/* Let's delete all lines of the hologram. */
+		final Hologram hologram = generator.getHolo();
+		hologram.clearLines();
+
+		/*
+		 * NOT WORKING.
+		 * 
+		 * WORKING -> areEnoughPlayers ? (SIZE ? BIG : SMALL) : NOT_ENOUGH
+		 */
+
+		/* If the generator is not working we neend't continue... */
+		if (!generator.isWorking()) {
+			final List<String> disabled = file.getStringList("Holograms.Disabled");
+			if (!disabled.isEmpty()) {
+				disabled.forEach(line -> addLine(generator, file, hologram, line));
+			}
+			return;
+		}
+
+		/* The generator should be working, are there enough players? */
+		if (!generator.areEnoughPlayers()) {
+			final List<String> enough = file.getStringList("Holograms.Not-Enough-Players");
+			if (!enough.isEmpty()) {
+				enough.forEach(line -> addLine(generator, file, hologram, line));
+			}
+			return;
+		}
+
+		/* Is the max time too big? Let's use the big-time from the file. */
+		if (generator.getMaxTime() > 20) {
+			final List<String> big = file.getStringList("Holograms.Enabled.Big-Time");
+			if (!big.isEmpty()) {
+				big.forEach(line -> addLine(generator, file, hologram, line));
+			}
+			return;
+		}
+
+		/* Is the max time small? Let's use small-time from the file. */
+		final List<String> small = file.getStringList("Holograms.Enabled.Small-Time");
+		if (!small.isEmpty()) {
+			small.forEach(line -> addLine(generator, file, hologram, line));
+		}
+
+	}
+
 }

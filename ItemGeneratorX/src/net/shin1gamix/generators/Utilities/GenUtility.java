@@ -45,7 +45,7 @@ public class GenUtility {
 		Map<String, String> map = new HashMap<>();
 		map.put("%id%", id);
 
-		if (!Ut.isAllowed(id)) {
+		if (!Ut.isStringLegal(id)) {
 			MessagesX.INVALID_ID.msg(p, map);
 			return;
 		}
@@ -84,14 +84,13 @@ public class GenUtility {
 		final Location loc = p.getLocation();
 		final int time = Integer.valueOf(timeAmount);
 
-		final GenScheduler gensch = new GenScheduler(this.main, loc, id, item, time < 1 ? 1 : time, playerLimit,
-				velocity);
+		final Generator gensch = new Generator(this.main, loc, id, item, time < 1 ? 1 : time, playerLimit, velocity);
 		gensch.runTaskTimer(this.main, 20, 1);
 		MessagesX.GEN_CREATED.msg(p, map);
 	}
 
 	public boolean isGenerator(final String id) {
-		return GenScheduler.getGens().keySet().stream().anyMatch(id::equalsIgnoreCase);
+		return Generator.getGens().keySet().stream().anyMatch(id::equalsIgnoreCase);
 	}
 
 	public void removeGenerator(final Player p, final String id) {
@@ -132,12 +131,12 @@ public class GenUtility {
 
 		final FileConfiguration file = this.main.getSettings().getFile();
 
-		final Collection<GenScheduler> machines = GenScheduler.getGens().values();
+		final Collection<Generator> generators = Generator.getGens().values();
 
 		final Set<String> offMachines = new HashSet<>();
 
 		for (final String confPath : file.getConfigurationSection("Generators").getKeys(false)) {
-			machloop: for (final String mach : GenScheduler.getGens().values().stream().map(GenScheduler::getId)
+			machloop: for (final String mach : Generator.getGens().values().stream().map(Generator::getId)
 					.collect(Collectors.toSet())) {
 				if (confPath.equalsIgnoreCase(mach)) {
 					continue machloop;
@@ -150,14 +149,14 @@ public class GenUtility {
 		offMachines.stream().map(str -> "Generators." + str).forEach(str -> file.set(str, null));
 
 		/* Saving all working paths to config */
-		machines.forEach(gen -> gen.saveMachine(file));
+		generators.forEach(gen -> gen.saveGenerator(file));
 
 		/* Saving file */
 		this.main.getSettings().saveFile();
 	}
 
-	public void disableGenerators() {
-		final Map<String, GenScheduler> gens = GenScheduler.getGens();
+	public void disableGenerators(final Player p) {
+		final Map<String, Generator> gens = Generator.getGens();
 		if (gens.isEmpty()) {
 			// TODO No generators were working.
 			return;
@@ -168,27 +167,29 @@ public class GenUtility {
 			return;
 		}
 		gens.values().forEach(gen -> gen.setWorking(false));
-		this.main.getHapi().refresh();
+		this.main.getHapi().refreshAll();
+		MessagesX.TASKS_CANCELLED.msg(p);
 	}
 
-	public void enableGenerators() {
-		final Map<String, GenScheduler> gens = GenScheduler.getGens();
+	public void enableGenerators(final Player p) {
+		final Map<String, Generator> gens = Generator.getGens();
 		if (gens.isEmpty()) {
 			// TODO No generators were working.
 			return;
 		}
 
-		if (gens.values().stream().allMatch(GenScheduler::isWorking)) {
+		if (gens.values().stream().allMatch(Generator::isWorking)) {
 			// All gens are working
 			return;
 		}
 
 		gens.values().forEach(gen -> gen.setWorking(true));
-		this.main.getHapi().refresh();
+		this.main.getHapi().refreshAll();
+		MessagesX.TASKS_CONTINUE.msg(p);
 	}
 
-	public GenScheduler getGenerator(final String id) {
-		return this.isGenerator(id) ? GenScheduler.getGens().get(id) : null;
+	public Generator getGenerator(final String id) {
+		return this.isGenerator(id) ? Generator.getGens().get(id) : null;
 	}
 
 	public void startGenerators() {
@@ -202,7 +203,7 @@ public class GenUtility {
 		final Set<String> generators = file.getConfigurationSection("Generators").getKeys(false);
 
 		for (final String id : generators) {
-			if (GenScheduler.getGens().containsKey(id)) {
+			if (Generator.getGens().containsKey(id)) {
 				continue;
 			}
 
@@ -218,8 +219,8 @@ public class GenUtility {
 			final int playerLimit = file.getInt(path + "player-limit");
 			final double velocity = file.getDouble(path + "velocity");
 
-			final GenScheduler gensch = new GenScheduler(this.main, loc, id, item, time, playerLimit, velocity);
-			GenScheduler.getGens().put(id, gensch);
+			final Generator gensch = new Generator(this.main, loc, id, item, time, playerLimit, velocity);
+			Generator.getGens().put(id, gensch);
 			gensch.runTaskTimer(this.main, 20, 1);
 
 		}
@@ -227,18 +228,18 @@ public class GenUtility {
 	}
 
 	public boolean deleteGenerator(final String id) {
-		if (GenScheduler.getGens().containsKey(id)) {
-			final GenScheduler gen = GenScheduler.getGens().get(id);
+		if (Generator.getGens().containsKey(id)) {
+			final Generator gen = Generator.getGens().get(id);
 			gen.cancel();
 			gen.getHolo().delete();
 			HologramsAPI.unregisterPlaceholder(this.main, this.main.getHapi().getTimeString(id));
-			GenScheduler.getGens().remove(id);
+			Generator.getGens().remove(id);
 			return true;
 		}
 		return false;
 	}
 
-	public boolean deleteGenerator(final GenScheduler gen) {
+	public boolean deleteGenerator(final Generator gen) {
 		return gen != null && this.deleteGenerator(gen.getId());
 	}
 }
