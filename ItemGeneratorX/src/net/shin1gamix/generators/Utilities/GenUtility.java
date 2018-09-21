@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -23,24 +24,30 @@ public class GenUtility {
 
 	private final Core main;
 
-	public GenUtility(Core main) {
+	public GenUtility(final Core main) {
 		this.main = main;
 	}
 
 	/* Create generator without playerlimit and or vector */
-	public void createGenerator(final Player p, final ItemStack item, final String id, final String timeAmount) {
-		createGenerator(p, p.getItemInHand().clone(), id, timeAmount, null);
+	public void createGenerator(final Player p, final String id, final String timeAmount) {
+		createGenerator(p, id, timeAmount, null);
 	}
 
 	/* Create generator without vector */
-	public void createGenerator(final Player p, final ItemStack item, final String id, final String timeAmount,
-			String playerLimitAmount) {
-		createGenerator(p, item, id, timeAmount, playerLimitAmount, null);
+	public void createGenerator(final Player p, final String id, final String timeAmount, String playerLimitAmount) {
+		createGenerator(p, id, timeAmount, playerLimitAmount, null);
 	}
 
 	/* Create full generator */
-	public void createGenerator(final Player p, final ItemStack item, final String id, final String timeAmount,
-			String playerLimitAmount, String vector) {
+	public void createGenerator(final Player p, final String id, final String timeAmount, String playerLimitAmount,
+			String vector) {
+
+		final ItemStack item;
+		if (Bukkit.getVersion().contains("1.8")) {
+			item = p.getItemInHand().clone();
+		} else {
+			item = p.getInventory().getItemInMainHand();
+		}
 
 		Map<String, String> map = new HashMap<>();
 		map.put("%id%", id);

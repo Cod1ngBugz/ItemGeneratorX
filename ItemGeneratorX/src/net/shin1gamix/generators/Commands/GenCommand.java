@@ -16,7 +16,7 @@ public class GenCommand implements CommandExecutor {
 
 	private final Core main;
 
-	public GenCommand(Core main) {
+	public GenCommand(final Core main) {
 		this.main = main;
 		main.getCommand("itemgeneratorx").setExecutor(this);
 	}
@@ -100,13 +100,13 @@ public class GenCommand implements CommandExecutor {
 
 		/* Create a generator with all available arguements. */
 		case 3: // Assume player typed /gen create <id>
-			this.main.getGenUt().createGenerator(p, p.getItemInHand().clone(), args[1], args[2]);
+			this.main.getGenUt().createGenerator(p, args[1], args[2]);
 			return true;
 		case 4: // Assume player typed /gen create <id> <max-time> <player-limit>
-			this.main.getGenUt().createGenerator(p, p.getItemInHand().clone(), args[1], args[2], args[3]);
+			this.main.getGenUt().createGenerator(p, args[1], args[2], args[3]);
 			return true;
 		case 5: // Assume player typed /gen create <id> <max-time> <player-limit> <velocity>
-			this.main.getGenUt().createGenerator(p, p.getItemInHand().clone(), args[1], args[2], args[3], args[4]);
+			this.main.getGenUt().createGenerator(p, args[1], args[2], args[3], args[4]);
 			return true;
 
 		/* No useful command found. Send invalid arg message. */

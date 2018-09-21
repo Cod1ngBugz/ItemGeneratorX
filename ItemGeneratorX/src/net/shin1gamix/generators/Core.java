@@ -36,7 +36,7 @@ public class Core extends JavaPlugin {
 		this.loadMessages();
 
 		/* Since files are loaded, load all generators */
-		this.getGenUt().startGenerators();
+		this.genUt.startGenerators();
 
 		/* Initialize the HAPI */
 		hapi = new HologramAPI(this);
@@ -47,7 +47,7 @@ public class Core extends JavaPlugin {
 	/* Attempts to load the messages file and repair/load it's paths. */
 	private void loadMessages() {
 		this.messages.setup(false);
-		MessagesX.repairPaths(this.getMessages());
+		MessagesX.repairPaths(this.messages);
 	}
 
 	/**
@@ -56,7 +56,7 @@ public class Core extends JavaPlugin {
 	 */
 	@Override
 	public void onDisable() {
-		this.getGenUt().saveGenerators();
+		this.genUt.saveGenerators();
 		HologramsAPI.unregisterPlaceholders(this);
 
 	}
