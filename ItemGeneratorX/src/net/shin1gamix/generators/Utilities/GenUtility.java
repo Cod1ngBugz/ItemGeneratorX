@@ -46,7 +46,7 @@ public class GenUtility {
 		if (Bukkit.getVersion().contains("1.8")) {
 			item = p.getItemInHand().clone();
 		} else {
-			item = p.getInventory().getItemInMainHand();
+			item = p.getInventory().getItemInMainHand().clone();
 		}
 
 		Map<String, String> map = new HashMap<>();
