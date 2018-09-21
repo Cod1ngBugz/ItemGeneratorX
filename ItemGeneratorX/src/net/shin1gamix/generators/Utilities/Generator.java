@@ -32,7 +32,7 @@ public class Generator extends BukkitRunnable {
 	private final int maxTime;
 	private int playerLimit;
 	private int currentTime;
-	private double velocity;
+
 	private final long creationDate;
 	private final Hologram holo;
 	private boolean working = true;
@@ -47,8 +47,7 @@ public class Generator extends BukkitRunnable {
 		this.setCurrentTime(0); // Resetting time
 		this.maxTime = time; // Setting max time
 		this.setPlayerLimit(playerLimit); // Setting player limit.
-		this.velocity = velocity; // Setting velocity
-		this.vel = new Vector(0, this.velocity, 0); // Setting vector with velocity
+		this.vel = new Vector(0, velocity, 0); // Setting vector with velocity
 		this.creationDate = System.currentTimeMillis(); // Creation time
 		this.holo = this.main.getHapi().startHoloTasks(this); // Adding hologram
 		gens.put(id, this); // Adds the generator in the map.
@@ -80,6 +79,9 @@ public class Generator extends BukkitRunnable {
 	}
 
 	/**
+	 * Sets a generator in the config file while removing and unregistering its
+	 * holograms.
+	 * 
 	 * @param file
 	 *            -> The file to save the generator's stats.
 	 */
@@ -96,7 +98,7 @@ public class Generator extends BukkitRunnable {
 		file.set(path + "player-limit", this.getPlayerLimit()); // Setting player-limit
 		file.set(path + "item", this.getItem()); // Settings the item
 		file.set(path + "location", this.getLoc()); // Setting
-		file.set(path + "velocity", this.getVelocity());
+		file.set(path + "velocity", this.vel.getY());
 	}
 
 	/**
@@ -117,21 +119,6 @@ public class Generator extends BukkitRunnable {
 			return;
 		}
 		this.currentTime = currentTime;
-	}
-
-	/**
-	 * @param velocity
-	 *            -> The velocity of the item's height.
-	 */
-	public void setVelocity(final double velocity) {
-		this.velocity = velocity;
-	}
-
-	/**
-	 * @return the velocity -> The item's current velocity. Default: 0X, 0.25Y, 0Z
-	 */
-	public double getVelocity() {
-		return this.velocity;
 	}
 
 	/**

@@ -11,32 +11,43 @@ import net.shin1gamix.generators.Utilities.Ut;
 
 public enum MessagesX {
 
-	NO_PERMISSION("Messages.No-Permission", "&cYou are not allowed to use this command."),
-	NOT_GENERATOR("Messages.Not-Generator", "&cThe id: &e%id% &cis not a generator!"), 
-	INVALID_ID("Messages.Invalid-Id","&cThe id: &e%id% &ccontains some invalid characters."), 
-	GEN_REMOVED("Messages.Generator-Removed","&cThe generator &e%id% &chas been removed."), 
-	GEN_CREATED("Messages.Generator-Created","&7A generator has been created with the id &e%id%&7."), 
-	GEN_ALREADY_EXISTS("Messages.Generator-Already-Exists","&cThe generator with id &e%id% &calready exists!"), 
-	NO_TIME_INSERTED("Messages.No-Time-Inserted","&cYou'll need to specify the time required for the generator to produce items!"), 
-	INVALID_TIME("Messages.Invalid-Time-Inserted","&cThe time needs to be an integer!"), 
-	INVALID_ITEM("Messages.Invalid-Item","&cYou are currently holding an invalid item or none at all."), 
-	PLAYER_ONLY("Messages.Players-Only","&cOnly players are allowed to do this!"), 
-	INVALID_ARGUEMENTS("Messages.Invalid-Arguements","&cYou must have made a typo, take a look at your command!"), 
-	GEN_REMOVE_HELP("Messages.Generator-Remove-Help","&cUsage: &e/gen remove <id>"), 
-	TASKS_CANCELLED("Messages.Generators-Disabled","&cAll generators have been disabled!"), 
-	TASKS_CONTINUE("Messages.Generators-Enabled","&aAll generators have been enabled!"), 
-	PLAYER_TELEPORT("Messages.Player-Teleport","&7You've been teleported to the generator &e%id%&7."), 
-	PLUGIN_RELOAD("Messages.Reload","&aThe plugin has been reloaded successfully."), 
-	HELP_FORMAT("Messages.Help-Format",
-			"&7&m----------------------------------",
-			"&3/gen help &7- Shows this menu.",
-			"&3/gen tp <gen> &7- Teleports you to a gen.",
-			"&3/gen remove <gen> &7- Removes a gen.",
-			"&3/gen cancel &7- Cancel all running gens.",
-			"&3/gen start &7- Continue running all gens.",
-			"&3/gen create <gen> <time> &7- Creates a gen.",
-			"&3/gen create <gen> <time> <players-online> &7- Creates a gen.",
-			"&3/gen create <gen> <time> <players-online> <velocity>&7- Creates a gen.");
+	NO_PERMISSION("Messages.No-Permission", "&cYou are not allowed to use this command."), NOT_GENERATOR(
+			"Messages.Not-Generator", "&cThe id: &e%id% &cis not a generator!"), INVALID_ID("Messages.Invalid-Id",
+					"&cThe id: &e%id% &ccontains some invalid characters."), GEN_REMOVED("Messages.Generator-Removed",
+							"&cThe generator &e%id% &chas been removed."), GEN_CREATED("Messages.Generator-Created",
+									"&7A generator has been created with the id &e%id%&7."), GEN_ALREADY_EXISTS(
+											"Messages.Generator-Already-Exists",
+											"&cThe generator with id &e%id% &calready exists!"), NO_TIME_INSERTED(
+													"Messages.No-Time-Inserted",
+													"&cYou'll need to specify the time required for the generator to produce items!"), INVALID_TIME(
+															"Messages.Invalid-Time-Inserted",
+															"&cThe time needs to be an integer!"), INVALID_ITEM(
+																	"Messages.Invalid-Item",
+																	"&cYou are currently holding an invalid item or none at all."), PLAYER_ONLY(
+																			"Messages.Players-Only",
+																			"&cOnly players are allowed to do this!"), INVALID_ARGUEMENTS(
+																					"Messages.Invalid-Arguements",
+																					"&cYou must have made a typo, take a look at your command!"), GEN_REMOVE_HELP(
+																							"Messages.Generator-Remove-Help",
+																							"&cUsage: &e/gen remove <id>"), TASKS_CANCELLED(
+																									"Messages.Generators-Disabled",
+																									"&cAll generators have been disabled!"), TASKS_CONTINUE(
+																											"Messages.Generators-Enabled",
+																											"&aAll generators have been enabled!"), PLAYER_TELEPORT(
+																													"Messages.Player-Teleport",
+																													"&7You've been teleported to the generator &e%id%&7."), PLUGIN_RELOAD(
+																															"Messages.Reload",
+																															"&aThe plugin has been reloaded successfully."), HELP_FORMAT(
+																																	"Messages.Help-Format",
+																																	"&7&m----------------------------------",
+																																	"&3/gen help &7- Shows this menu.",
+																																	"&3/gen tp <gen> &7- Teleports you to a gen.",
+																																	"&3/gen remove <gen> &7- Removes a gen.",
+																																	"&3/gen cancel &7- Cancel all running gens.",
+																																	"&3/gen start &7- Continue running all gens.",
+																																	"&3/gen create <gen> <time> &7- Creates a gen.",
+																																	"&3/gen create <gen> <time> <players-online> &7- Creates a gen.",
+																																	"&3/gen create <gen> <time> <players-online> <velocity>&7- Creates a gen.");
 
 	/** @see #getMessages() */
 	private String[] messages;
@@ -152,6 +163,9 @@ public enum MessagesX {
 	 * @param map
 	 */
 	public void msg(final CommandSender target, final Map<String, String> map) {
+		if (target == null) {
+			return;
+		}
 		if (this.isMultiLined()) {
 			Ut.msg(target, this.getMessages(), map);
 		} else {

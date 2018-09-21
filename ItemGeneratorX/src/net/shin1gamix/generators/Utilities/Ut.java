@@ -5,9 +5,12 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -259,6 +262,18 @@ public final class Ut {
 	 */
 	public static List<String> tr(final List<String> coll) {
 		return coll.stream().map(str -> tr(str)).collect(Collectors.toList());
+	}
+
+	public static <T, V> Map<T, V> newMap() {
+		return new HashMap<T, V>();
+	}
+
+	public static <T> List<T> newList() {
+		return new ArrayList<T>();
+	}
+
+	public static <T> Set<T> newSet() {
+		return new HashSet<T>();
 	}
 
 }
