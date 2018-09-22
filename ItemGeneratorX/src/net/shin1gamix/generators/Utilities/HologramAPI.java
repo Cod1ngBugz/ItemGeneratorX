@@ -69,7 +69,7 @@ public class HologramAPI implements Listener {
 	 * @see Hologram#setAllowPlaceholders(boolean)
 	 * @see #getTimeString(String)
 	 */
-	public Hologram createGeneratorHologram(final Generator generator) {
+	public Hologram createGeneratorHologram(final HoloGenerator generator) {
 		final Location loc = generator.getLoc().clone();
 
 		final Hologram hologram = HologramsAPI.createHologram(this.main, loc.add(0, 4, 0));
@@ -154,7 +154,8 @@ public class HologramAPI implements Listener {
 	 * @see #refresh(Generator)
 	 */
 	public void refreshAll() {
-		Generator.getGens().values().forEach(generator -> refresh(generator));
+		Generator.gens.values().stream().filter(gen -> gen instanceof HoloGenerator)
+				.forEach(generator -> refresh((HoloGenerator) generator));
 	}
 
 	/**
@@ -180,7 +181,7 @@ public class HologramAPI implements Listener {
 	 * @see #refresh(Generator)
 	 * @see BukkitRunnable#runTaskLater(org.bukkit.plugin.Plugin, long)
 	 */
-	public void refreshLater(final Generator generator) {
+	public void refreshLater(final HoloGenerator generator) {
 		new BukkitRunnable() {
 			@Override
 			public void run() {
@@ -201,7 +202,9 @@ public class HologramAPI implements Listener {
 	 * @see Generator#getMaxTime()
 	 * @see #addLine(Generator, FileConfiguration, Hologram, String)
 	 */
-	public void refresh(final Generator generator) {
+	public void refresh(final HoloGenerator generator) {
+		Bukkit.broadcastMessage(generator.getId());
+		Bukkit.broadcastMessage(generator.getLoc().toString());
 		final FileConfiguration file = this.main.getSettings().getFile();
 
 		/* Is the file in any case null or are there no generators? */

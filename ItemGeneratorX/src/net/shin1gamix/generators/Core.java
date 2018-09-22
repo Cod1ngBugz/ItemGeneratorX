@@ -46,11 +46,11 @@ public class Core extends JavaPlugin {
 		this.settings.setup(true);
 		this.loadMessages();
 
-		/* Since files are loaded, load all generators */
-		this.genUt.initGenerators();
-
 		/* Initialize the HAPI */
 		hapi = new HologramAPI(this);
+
+		/* Since files are loaded, load all generators */
+		this.genUt.initGenerators();
 
 		new GenCommand(this);
 	}

@@ -15,8 +15,6 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
-import com.gmail.filoghost.holographicdisplays.api.HologramsAPI;
-
 import net.shin1gamix.generators.Core;
 import net.shin1gamix.generators.MessagesX;
 
@@ -125,9 +123,8 @@ public class GenUtility {
 		final int time = Integer.valueOf(timeAmount);
 
 		/* Creating the generator */
-		final Generator generator = new Generator(this.main, loc, id, item, time < 1 ? 1 : time, playerLimit, velocity);
-		/* Setting the generator to work 1 second later for every 1 second. */
-		generator.runTaskTimer(this.main, 20, 1);
+
+		new HoloGenerator(main, loc, id, item, time, playerLimit, velocity);
 		MessagesX.GEN_CREATED.msg(p, map);
 	}
 
@@ -197,24 +194,10 @@ public class GenUtility {
 
 		final FileConfiguration file = this.main.getSettings().getFile();
 
-		final Collection<Generator> generators = Generator.getGens().values();
-
-		/* Attempt to gather all paths from the config that are not a generator. */
-		final Set<String> offMachines = new HashSet<>();
-		for (final String confPath : file.getConfigurationSection("Generators").getKeys(false)) {
-			machloop: for (final String mach : Generator.getGens().values().stream().map(Generator::getId)
-					.collect(Collectors.toSet())) {
-				if (confPath.equalsIgnoreCase(mach)) {
-					continue machloop;
-				}
-				offMachines.add(confPath);
-			}
-		}
-		/* Removing all invalid paths */
-		offMachines.stream().map(str -> "Generators." + str).forEach(str -> file.set(str, null));
+		final Collection<Generator> generators = Generator.gens.values();
 
 		/* Saving all working paths to config */
-		generators.forEach(gen -> gen.saveGenerator(file));
+		generators.forEach(gen -> gen.saveGenerator(this.main, file));
 
 		/* Saving file */
 		this.main.getSettings().saveFile();
@@ -232,7 +215,7 @@ public class GenUtility {
 	 * @see HologramAPI#refreshAll()
 	 */
 	public void disableGenerators(final Player p) {
-		final Map<String, Generator> gens = Generator.getGens();
+		final Map<String, Generator> gens = Generator.gens;
 		if (gens.isEmpty()) {
 			// TODO No generators were working.
 			return;
@@ -259,7 +242,7 @@ public class GenUtility {
 	 * @see HologramAPI#refreshAll()
 	 */
 	public void enableGenerators(final Player p) {
-		final Map<String, Generator> gens = Generator.getGens();
+		final Map<String, Generator> gens = Generator.gens;
 		if (gens.isEmpty()) {
 			// TODO No generators were working.
 			return;
@@ -284,7 +267,7 @@ public class GenUtility {
 	 *         {@link Generator#getGens()} map.
 	 */
 	public Generator getGenerator(final String id) {
-		return this.isGenerator(id, false) ? Generator.getGens().get(id) : null;
+		return this.isGenerator(id, false) ? Generator.gens.get(id) : null;
 	}
 
 	/**
@@ -319,31 +302,21 @@ public class GenUtility {
 			final int time = file.getInt(path + "time");
 			final int playerLimit = file.getInt(path + "player-limit");
 			final double velocity = file.getDouble(path + "velocity");
+			final boolean hologram = file.getBoolean(path + "using-hologram");
 
-			final Generator generator = new Generator(this.main, loc, id, item, time, playerLimit, velocity);
-			generator.runTaskTimer(this.main, 20, 1);
+			if (hologram) {
+				new HoloGenerator(this.main, loc, id, item, time, playerLimit, velocity);
+			} else {
+				new SimpleGenerator(this.main, loc, id, item, time, playerLimit, velocity);
+			}
+
 		}
 
 	}
 
-	/**
-	 * Attempts to remove a generator by a given string but doesn't remove it from
-	 * file.
-	 * 
-	 * @param id
-	 *            -> The generator to remove.
-	 * @return -> true if the removal was succesful.
-	 */
 	public boolean deleteGenerator(final String id) {
-		if (!isGenerator(id, false)) {
-			return false;
-		}
-		final Generator gen = Generator.getGens().get(id);
-		gen.cancel();
-		gen.getHolo().delete();
-		HologramsAPI.unregisterPlaceholder(this.main, this.main.getHapi().getTimeStringPlaceholder(id));
-		Generator.getGens().remove(id);
-		return true;
+		final Generator gen = Generator.gens.get(id);
+		return this.deleteGenerator(gen);
 	}
 
 	/**
@@ -355,6 +328,10 @@ public class GenUtility {
 	 * @see #deleteGenerator(String)
 	 */
 	public boolean deleteGenerator(final Generator gen) {
-		return gen != null && this.deleteGenerator(gen.getId());
+		if (gen == null) {
+			return false;
+		}
+		gen.remove();
+		return true;
 	}
 }
