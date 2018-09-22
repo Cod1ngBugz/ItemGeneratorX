@@ -1,4 +1,4 @@
-package net.shin1gamix.generators.Utilities;
+package net.shin1gamix.generators.Generators;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -23,8 +23,15 @@ public class SimpleGenerator implements Generator {
 	private final Vector vel;
 	private final BukkitTask task;
 
+	private final Core main;
+
+	public Core getCore() {
+		return this.main;
+	}
+
 	public SimpleGenerator(final Core main, final Location loc, final String id, final ItemStack item, final int time,
 			final int playerLimit, final double velocity) {
+		this.main = main;
 		this.loc = loc; // Gen location
 		this.id = id; // Gen id
 		this.item = item; // Gen item
@@ -160,7 +167,13 @@ public class SimpleGenerator implements Generator {
 	}
 
 	public void remove() {
-
+		this.task.cancel();
+		gens.remove(this.id);
+		final FileConfiguration file = this.main.getSettings().getFile();
+		if (file.contains("Generators." + id)) {
+			file.set("Generators." + id, null);
+			this.main.getSettings().saveFile();
+		}
 	}
 
 }

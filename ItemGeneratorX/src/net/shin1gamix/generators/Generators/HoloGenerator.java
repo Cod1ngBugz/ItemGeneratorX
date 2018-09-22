@@ -1,10 +1,11 @@
-package net.shin1gamix.generators.Utilities;
+package net.shin1gamix.generators.Generators;
 
 import org.bukkit.Location;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.inventory.ItemStack;
 
 import com.gmail.filoghost.holographicdisplays.api.Hologram;
+import com.gmail.filoghost.holographicdisplays.api.HologramsAPI;
 
 import net.shin1gamix.generators.Core;
 
@@ -27,7 +28,10 @@ public class HoloGenerator extends SimpleGenerator implements Generator {
 
 	@Override
 	public void remove() {
-
+		super.remove();
+		getHolo().clearLines();
+		HologramsAPI.unregisterPlaceholder(this.getCore(),
+				this.getCore().getHapi().getTimeStringPlaceholder(this.getId()));
 	}
 
 	/**

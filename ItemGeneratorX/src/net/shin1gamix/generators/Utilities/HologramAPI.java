@@ -21,6 +21,8 @@ import com.gmail.filoghost.holographicdisplays.api.HologramsAPI;
 import com.gmail.filoghost.holographicdisplays.api.placeholder.PlaceholderReplacer;
 
 import net.shin1gamix.generators.Core;
+import net.shin1gamix.generators.Generators.Generator;
+import net.shin1gamix.generators.Generators.HoloGenerator;
 
 public class HologramAPI implements Listener {
 
@@ -40,7 +42,7 @@ public class HologramAPI implements Listener {
 	 * @return String -> The placeholder in a string form if found.]
 	 * @see Material#matchMaterial(String)
 	 */
-	private String getMaterial(final String input) {
+	private String getMaterialPlaceholder(final String input) {
 		final String replaced = input.replace("%", "");
 		if (replaced.contains(" ")) {
 			return null;
@@ -51,10 +53,12 @@ public class HologramAPI implements Listener {
 		/* Null if no placeholder found matching the input string. */
 		final String path = matSection.stream().filter(replaced::equalsIgnoreCase).findFirst().orElse(null);
 
-		/* Null if material not matched. */
-		final Material mat = Material.matchMaterial(file.getString("Holograms.materials." + path));
-
-		return mat == null ? null : path;
+		try {
+			Material.valueOf(file.getString("Holograms.materials." + path));
+			return path;
+		} catch (Exception e) {
+			return null;
+		}
 	}
 
 	/**
@@ -109,7 +113,7 @@ public class HologramAPI implements Listener {
 	 */
 	private void addLine(final Generator generator, final FileConfiguration file, final Hologram hologram,
 			final String line) {
-		final String mat = this.getMaterial(line);
+		final String mat = this.getMaterialPlaceholder(line);
 
 		if (mat == null) {
 			final Map<String, String> map = new HashMap<>();
@@ -203,8 +207,6 @@ public class HologramAPI implements Listener {
 	 * @see #addLine(Generator, FileConfiguration, Hologram, String)
 	 */
 	public void refresh(final HoloGenerator generator) {
-		Bukkit.broadcastMessage(generator.getId());
-		Bukkit.broadcastMessage(generator.getLoc().toString());
 		final FileConfiguration file = this.main.getSettings().getFile();
 
 		/* Is the file in any case null or are there no generators? */

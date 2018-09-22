@@ -4,6 +4,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import com.gmail.filoghost.holographicdisplays.api.Hologram;
 import com.gmail.filoghost.holographicdisplays.api.HologramsAPI;
 
 import net.shin1gamix.generators.Commands.GenCommand;
@@ -69,6 +70,7 @@ public class Core extends JavaPlugin {
 	public void onDisable() {
 		this.genUt.saveGenerators();
 		HologramsAPI.unregisterPlaceholders(this);
+		HologramsAPI.getHolograms(this).forEach(Hologram::delete);
 
 	}
 

@@ -1,4 +1,4 @@
-package net.shin1gamix.generators.Utilities;
+package net.shin1gamix.generators.Generators;
 
 import java.util.HashMap;
 import java.util.Map;

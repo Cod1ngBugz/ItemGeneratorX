@@ -10,7 +10,7 @@ import org.bukkit.entity.Player;
 
 import net.shin1gamix.generators.Core;
 import net.shin1gamix.generators.MessagesX;
-import net.shin1gamix.generators.Utilities.Generator;
+import net.shin1gamix.generators.Generators.Generator;
 
 public class GenCommand implements CommandExecutor {
 
@@ -91,6 +91,11 @@ public class GenCommand implements CommandExecutor {
 				this.genTeleport(p, args);
 			}
 
+			/* Attempt to toggle the hologram. */
+			else if (args[0].equalsIgnoreCase("toggleholo")) {
+				this.toggleHolo(p, args);
+			}
+
 			/* No useful command found. Send invalid arg message. */
 			else {
 				MessagesX.INVALID_ARGUEMENTS.msg(p);
@@ -115,6 +120,11 @@ public class GenCommand implements CommandExecutor {
 			return true;
 
 		}
+	}
+
+	private void toggleHolo(final Player p, final String[] args) {
+		// TODO Auto-generated method stub
+		
 	}
 
 	/* Reloads and fixes all files and holograms. */

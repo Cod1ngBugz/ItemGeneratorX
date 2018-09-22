@@ -3,10 +3,8 @@ package net.shin1gamix.generators.Utilities;
 import java.io.File;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -17,6 +15,9 @@ import org.bukkit.inventory.ItemStack;
 
 import net.shin1gamix.generators.Core;
 import net.shin1gamix.generators.MessagesX;
+import net.shin1gamix.generators.Generators.Generator;
+import net.shin1gamix.generators.Generators.HoloGenerator;
+import net.shin1gamix.generators.Generators.SimpleGenerator;
 
 public class GenUtility {
 
@@ -163,7 +164,9 @@ public class GenUtility {
 		}
 
 		/* Completely remove the generator */
-		this.deleteGenerator(id);
+		if (!this.deleteGenerator(id)) {
+			Ut.msg(p, "&cGenerator couldn't be removed!");
+		}
 
 		if (main.getSettings().getFile().contains("Generators." + id)) {
 			main.getSettings().getFile().set("Generators." + id, null);
