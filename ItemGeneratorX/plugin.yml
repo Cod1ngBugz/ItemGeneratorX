@@ -3,7 +3,7 @@ author: Shin1gamiX
 description: A custom plugin for WhiteWolf.
 version: 0.1
 main: net.shin1gamix.generators.Core
-softdepend: [HolographicDisplays]
+depend: [HolographicDisplays]
 commands:
   itemgeneratorx:
     description: The basic command.

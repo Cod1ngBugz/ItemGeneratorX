@@ -49,7 +49,7 @@ public class Generator extends BukkitRunnable {
 		this.setPlayerLimit(playerLimit); // Setting player limit.
 		this.vel = new Vector(0, velocity, 0); // Setting vector with velocity
 		this.creationDate = System.currentTimeMillis(); // Creation time
-		this.holo = this.main.getHapi().startHoloTasks(this); // Adding hologram
+		this.holo = this.main.getHapi().createGeneratorHologram(this); // Adding hologram
 		gens.put(id, this); // Adds the generator in the map.
 
 	}

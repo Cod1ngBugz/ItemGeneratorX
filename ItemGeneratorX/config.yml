@@ -1,8 +1,20 @@
+# ###################################################################### #
+# 
+#   small-less-than: If the max amount of the generator is
+# less or equal to this number it will be considered "small".
+#
+#   materials: these are some placeholders that hold some material.
+# If that material is null or doesn't exist, the placeholder won't work.
+#
+#
+# ###################################################################### #
+
 Holograms:
   materials:
     stone: 'STONE'
     dblock: 'DIAMOND_BLOCK'
     eblock: 'EMERALD_BLOCK'
+  small-less-than: 20
   Enabled:
     Big-Time:
       - '%eblock%' # This has to be alone, if it's not alone, it will not be added as an item.

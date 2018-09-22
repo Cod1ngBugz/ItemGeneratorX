@@ -341,7 +341,7 @@ public class GenUtility {
 		final Generator gen = Generator.getGens().get(id);
 		gen.cancel();
 		gen.getHolo().delete();
-		HologramsAPI.unregisterPlaceholder(this.main, this.main.getHapi().getTimeString(id));
+		HologramsAPI.unregisterPlaceholder(this.main, this.main.getHapi().getTimeStringPlaceholder(id));
 		Generator.getGens().remove(id);
 		return true;
 	}

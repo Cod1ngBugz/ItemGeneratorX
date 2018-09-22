@@ -26,42 +26,57 @@ public class HologramAPI implements Listener {
 
 	private final Core main;
 
-	public Core getCore() {
-		return this.main;
-	}
-
 	public HologramAPI(final Core main) {
 		this.main = main;
 		Bukkit.getPluginManager().registerEvents(this, main);
 	}
 
-	private String getMaterial(String line) {
-		line = line.replace("%", "");
-		if (line.contains(" ")) {
+	/**
+	 * Attempts to lookup and return a placeholder material from the hologram
+	 * section of the config.
+	 * 
+	 * @param input
+	 *            -> The string to be looked up
+	 * @return String -> The placeholder in a string form if found.]
+	 * @see Material#matchMaterial(String)
+	 */
+	private String getMaterial(final String input) {
+		final String replaced = input.replace("%", "");
+		if (replaced.contains(" ")) {
 			return null;
 		}
-		final FileConfiguration file = this.getCore().getSettings().getFile();
-		final Set<String> mats = file.getConfigurationSection("Holograms.materials").getKeys(false);
-		final String path = mats.stream().filter(line::equalsIgnoreCase).findFirst().orElse(null);
+		final FileConfiguration file = this.main.getSettings().getFile();
+		final Set<String> matSection = file.getConfigurationSection("Holograms.materials").getKeys(false);
 
-		if (path == null) {
-			return null;
-		}
+		/* Null if no placeholder found matching the input string. */
+		final String path = matSection.stream().filter(replaced::equalsIgnoreCase).findFirst().orElse(null);
 
+		/* Null if material not matched. */
 		final Material mat = Material.matchMaterial(file.getString("Holograms.materials." + path));
 
 		return mat == null ? null : path;
 	}
 
-	public Hologram startHoloTasks(final Generator generator) {
+	/**
+	 * Creates a hologram in the location of a generator.
+	 * 
+	 * @param generator
+	 *            -> The generator at which the hologram will be created.
+	 * @return Hologram -> The hologram object so as to modify later.
+	 * @see HologramsAPI#registerPlaceholder(org.bukkit.plugin.Plugin, String,
+	 *      double, PlaceholderReplacer)
+	 * @see #refresh(Generator)
+	 * @see Hologram#setAllowPlaceholders(boolean)
+	 * @see #getTimeString(String)
+	 */
+	public Hologram createGeneratorHologram(final Generator generator) {
 		final Location loc = generator.getLoc().clone();
 
-		final Hologram hologram = HologramsAPI.createHologram(this.getCore(), loc.add(0, 4, 0));
+		final Hologram hologram = HologramsAPI.createHologram(this.main, loc.add(0, 4, 0));
 		hologram.setAllowPlaceholders(true);
 
-		final String plc = this.getTimeString(generator.getId());
-
-		HologramsAPI.registerPlaceholder(this.getCore(), plc, .1, new PlaceholderReplacer() {
+		final String plc = this.getTimeStringPlaceholder(generator);
+		HologramsAPI.registerPlaceholder(this.main, plc, .1, new PlaceholderReplacer() {
 			@Override
 			public String update() {
 				final int max = generator.getMaxTime();
@@ -74,17 +89,35 @@ public class HologramAPI implements Listener {
 		return hologram;
 	}
 
-	private void addLine(final Generator mach, final FileConfiguration file, final Hologram hologram,
+	/**
+	 * Adds a line in a hologram.
+	 * 
+	 * @param generator
+	 *            -> The generator to retrieve stats from.
+	 * @param file
+	 *            -> The file to retrieve certain material placeholders.
+	 * @param hologram
+	 *            -> The hologram to add the line to.
+	 * @param line
+	 *            -> The line to add.
+	 * 
+	 * @see #getMaterial(String)
+	 * @see Ut#placeHolder(String, Map)
+	 * @see Hologram#appendItemLine(ItemStack)
+	 * @see Hologram#appendTextLine(String)
+	 * @see Material#matchMaterial(String)
+	 */
+	private void addLine(final Generator generator, final FileConfiguration file, final Hologram hologram,
 			final String line) {
 		final String mat = this.getMaterial(line);
 
 		if (mat == null) {
 			final Map<String, String> map = new HashMap<>();
-			map.put("%item-" + mach.getId() + "%",
-					Ut.capFirst(mach.getItem().getType().name().replace("_", " ").toLowerCase(), true));
-			map.put("%generator%", mach.getId());
+			map.put("%item-" + generator.getId() + "%",
+					Ut.capFirst(generator.getItem().getType().name().replace("_", " ").toLowerCase(), true));
+			map.put("%generator%", generator.getId());
 			map.put("%online%", Bukkit.getOnlinePlayers().size() + "");
-			map.put("%needed%", mach.getPlayerLimit() + "");
+			map.put("%needed%", generator.getPlayerLimit() + "");
 
 			hologram.appendTextLine(Ut.tr(Ut.placeHolder(line, map)));
 		} else {
@@ -93,29 +126,44 @@ public class HologramAPI implements Listener {
 		}
 	}
 
-	public String getTimeString(final String id) {
-		return "%time-left-" + id + "%";
-	}
-
-	public String getItemString(final String id) {
-		return "%item-" + id + "%";
-	}
-
+	/**
+	 * Listens on player quit event. Refreshes all holograms so as to make sure
+	 * there are enough players for the generator to work.
+	 * 
+	 * @see #refreshLater()
+	 */
 	@EventHandler
 	private void onQuit(final PlayerQuitEvent e) {
-		this.refreshLater();
+		this.refreshAllLater();
 	}
 
+	/**
+	 * Listens on player join event. Refreshes all holograms so as to make sure
+	 * there are enough players for the generator to work if it doesn't.
+	 * 
+	 * @see #refreshLater()
+	 */
 	@EventHandler
 	private void onJoin(final PlayerJoinEvent e) {
-		this.refreshLater();
+		this.refreshAllLater();
 	}
 
+	/**
+	 * Refreshes all generators holograms.
+	 * 
+	 * @see #refresh(Generator)
+	 */
 	public void refreshAll() {
 		Generator.getGens().values().forEach(generator -> refresh(generator));
 	}
 
-	public void refreshLater() {
+	/**
+	 * Refreshes all generators holograms a tick later.
+	 * 
+	 * @see #refreshAll()
+	 * @see BukkitRunnable#runTaskLater(org.bukkit.plugin.Plugin, long)
+	 */
+	public void refreshAllLater() {
 		new BukkitRunnable() {
 			@Override
 			public void run() {
@@ -124,6 +172,14 @@ public class HologramAPI implements Listener {
 		}.runTaskLater(this.main, 1);
 	}
 
+	/**
+	 * Refreshes a generator a tick later.
+	 * 
+	 * @param generator
+	 *            -> The generator to refresh.
+	 * @see #refresh(Generator)
+	 * @see BukkitRunnable#runTaskLater(org.bukkit.plugin.Plugin, long)
+	 */
 	public void refreshLater(final Generator generator) {
 		new BukkitRunnable() {
 			@Override
@@ -133,8 +189,20 @@ public class HologramAPI implements Listener {
 		}.runTaskLater(this.main, 1);
 	}
 
+	/**
+	 * Refreshses a generator by deleting all lines and then re-adding the correct
+	 * ones.
+	 * 
+	 * @param generator
+	 *            -> The generator to refresh.
+	 * @see Hologram#clearLines()
+	 * @see Generator#isWorking()
+	 * @see Generator#areEnoughPlayers()
+	 * @see Generator#getMaxTime()
+	 * @see #addLine(Generator, FileConfiguration, Hologram, String)
+	 */
 	public void refresh(final Generator generator) {
-		final FileConfiguration file = this.getCore().getSettings().getFile();
+		final FileConfiguration file = this.main.getSettings().getFile();
 
 		/* Is the file in any case null or are there no generators? */
 		if (file == null || Generator.getGens().isEmpty()) {
@@ -145,10 +213,17 @@ public class HologramAPI implements Listener {
 		final Hologram hologram = generator.getHolo();
 		hologram.clearLines();
 
-		/*
-		 * NOT WORKING.
+		/**
+		 * @ENABLED If the generator is not working the disabled hologram will be used.
 		 * 
-		 * WORKING -> areEnoughPlayers ? (SIZE ? BIG : SMALL) : NOT_ENOUGH
+		 * @NOT_ENOUGH If the generator is working and there are not enough players the
+		 *             not enough players hologram will be used.
+		 * 
+		 * @BIG_TIME If the generator is working and its max time is greater than 20 the
+		 *           big time hologram will be used
+		 * 
+		 * @SMALL_TIME If the generator is working and its max time is less than 20 the
+		 *             small time hologram will be used
 		 */
 
 		/* If the generator is not working we neend't continue... */
@@ -160,7 +235,7 @@ public class HologramAPI implements Listener {
 			return;
 		}
 
-		/* The generator should be working, are there enough players? */
+		/* The generator should be working, are there not enough players? */
 		if (!generator.areEnoughPlayers()) {
 			final List<String> enough = file.getStringList("Holograms.Not-Enough-Players");
 			if (!enough.isEmpty()) {
@@ -170,7 +245,7 @@ public class HologramAPI implements Listener {
 		}
 
 		/* Is the max time too big? Let's use the big-time from the file. */
-		if (generator.getMaxTime() > 20) {
+		if (generator.getMaxTime() > file.getInt("Holograms.small-less-than")) {
 			final List<String> big = file.getStringList("Holograms.Enabled.Big-Time");
 			if (!big.isEmpty()) {
 				big.forEach(line -> addLine(generator, file, hologram, line));
@@ -184,6 +259,25 @@ public class HologramAPI implements Listener {
 			small.forEach(line -> addLine(generator, file, hologram, line));
 		}
 
+	}
+
+	/**
+	 * @param id
+	 *            -> The id to include.
+	 * @return String -> A placeholder string containing an id
+	 */
+	public String getTimeStringPlaceholder(final String id) {
+		return "%time-left-" + id + "%";
+	}
+
+	/**
+	 * @param gen
+	 *            -> The gen to retrieve the id from.
+	 * @return String -> A placeholder string containing an id
+	 * @see #getTimeStringPlaceholder(String)
+	 */
+	public String getTimeStringPlaceholder(final Generator gen) {
+		return this.getTimeStringPlaceholder(gen.getId());
 	}
 
 }

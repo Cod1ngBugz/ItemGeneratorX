@@ -1,5 +1,7 @@
 package net.shin1gamix.generators;
 
+import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import com.gmail.filoghost.holographicdisplays.api.HologramsAPI;
@@ -8,6 +10,7 @@ import net.shin1gamix.generators.Commands.GenCommand;
 import net.shin1gamix.generators.Utilities.CFG;
 import net.shin1gamix.generators.Utilities.GenUtility;
 import net.shin1gamix.generators.Utilities.HologramAPI;
+import net.shin1gamix.generators.Utilities.Ut;
 
 public class Core extends JavaPlugin {
 
@@ -29,6 +32,14 @@ public class Core extends JavaPlugin {
 	 */
 	@Override
 	public void onEnable() {
+		if (!Bukkit.getPluginManager().getPlugin("HolographicDisplays").isEnabled()) {
+			Bukkit.getOnlinePlayers().stream().filter(Player::isOp).forEach(player -> {
+				Ut.msg(player, "&cWarning! Dependancy: &3HolographicDisplays &cwasn't found...");
+				Ut.msg(player, "&cDisabling &4" + this.getDescription().getName() + " &cso as to avoid errors.");
+			});
+			Bukkit.getPluginManager().disablePlugin(this);
+			return;
+		}
 
 		/* Load all files */
 		this.saveDefaultConfig();
