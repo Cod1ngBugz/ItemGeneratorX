@@ -100,11 +100,9 @@ public class GenCommand implements CommandExecutor {
 				MessagesX.GEN_TP_HELP.msg(p);
 			}
 
-			/* Lists all nearby generators. */
+			/* Lists all nearby generators in a range of 50. */
 			else if (args[0].equalsIgnoreCase("near")) {
-
 				this.getNearByGenerators(p, null);
-
 			}
 
 			/* No useful command found. Send invalid arg message. */
@@ -126,7 +124,7 @@ public class GenCommand implements CommandExecutor {
 				this.genTeleport(p, args);
 			}
 
-			/* Attempt to teleport to a generator. */
+			/* Lists all nearby generators in a range of X. */
 			else if (args[0].equalsIgnoreCase("near")) {
 				this.getNearByGenerators(p, args[1]);
 			}
