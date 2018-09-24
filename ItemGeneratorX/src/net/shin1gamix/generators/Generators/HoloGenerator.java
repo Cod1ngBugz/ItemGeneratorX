@@ -8,10 +8,11 @@ import com.gmail.filoghost.holographicdisplays.api.Hologram;
 import com.gmail.filoghost.holographicdisplays.api.HologramsAPI;
 
 import net.shin1gamix.generators.Core;
+import net.shin1gamix.generators.Utilities.CFG;
 
 public class HoloGenerator extends SimpleGenerator implements Generator {
 
-	private final Hologram holo;
+	private Hologram holo;
 
 	public HoloGenerator(final Core main, final Location loc, final String id, final ItemStack item, final int time,
 			final int playerLimit, double velocity) {
@@ -27,9 +28,24 @@ public class HoloGenerator extends SimpleGenerator implements Generator {
 	}
 
 	@Override
-	public void remove() {
-		super.remove();
-		getHolo().clearLines();
+	public void setLoc(final Location loc) {
+		super.setLoc(loc);
+		this.getHolo().delete();
+		this.holo = this.getCore().getHapi().createGeneratorHologram(this);
+	}
+
+	@Override
+	public void stopTaskAndRemoveFile() {
+		super.stopTaskAndRemoveFile();
+		this.removeLines();
+		this.unregisterPlaceHolder();
+	}
+
+	public void removeLines() {
+		this.getHolo().clearLines();
+	}
+
+	public void unregisterPlaceHolder() {
 		HologramsAPI.unregisterPlaceholder(this.getCore(),
 				this.getCore().getHapi().getTimeStringPlaceholder(this.getId()));
 	}
@@ -42,15 +58,21 @@ public class HoloGenerator extends SimpleGenerator implements Generator {
 	 *            -> The file to save the generator's stats.
 	 */
 	@Override
-	public void saveGenerator(final Core main, final FileConfiguration file) {
+	public void saveGenerator() {
+		final CFG cfg = this.getCore().getSettings();
+		final FileConfiguration file = cfg.getFile();
 		final String path = "Generators." + this.getId() + ".";
-		file.set(path + "creation-time", this.getCreationDate());
+		if (!file.contains(path + "creation-time")) {
+			file.set(path + "creation-time", this.getCreationDate());
+		}
 		file.set(path + "time", this.getMaxTime()); // Setting the time
 		file.set(path + "player-limit", this.getPlayerLimit()); // Setting player-limit
 		file.set(path + "item", this.getItem()); // Settings the item
+		file.set(path + "working", this.isWorking());
 		file.set(path + "location", this.getLoc()); // Setting
 		file.set(path + "velocity", this.getVelocity().getY());
 		file.set(path + "using-hologram", true);
+		cfg.saveFile();
 	}
 
 }

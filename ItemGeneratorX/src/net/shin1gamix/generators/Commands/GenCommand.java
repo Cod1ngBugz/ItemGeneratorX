@@ -1,8 +1,13 @@
 package net.shin1gamix.generators.Commands;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
+import org.bukkit.Location;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -11,6 +16,9 @@ import org.bukkit.entity.Player;
 import net.shin1gamix.generators.Core;
 import net.shin1gamix.generators.MessagesX;
 import net.shin1gamix.generators.Generators.Generator;
+import net.shin1gamix.generators.Generators.HoloGenerator;
+import net.shin1gamix.generators.Generators.SimpleGenerator;
+import net.shin1gamix.generators.Utilities.Ut;
 
 public class GenCommand implements CommandExecutor {
 
@@ -54,7 +62,7 @@ public class GenCommand implements CommandExecutor {
 
 			/* Disable all generators. */
 			else if (args[0].equalsIgnoreCase("cancel")) {
-				this.main.getGenUt().disableGenerators(p);
+				this.main.getGenUt().cancelGenerators(p);
 			}
 
 			/* Enable all generators. */
@@ -67,9 +75,36 @@ public class GenCommand implements CommandExecutor {
 				this.reloadFiles(p);
 			}
 
+			/* Saves in file all generators. */
+			else if (args[0].equalsIgnoreCase("save")) {
+				this.main.getGenUt().saveGenerators();
+			}
+
 			/* Send usage of remove command. */
 			else if (args[0].equalsIgnoreCase("remove")) {
 				MessagesX.GEN_REMOVE_HELP.msg(p);
+			}
+
+			/* Send usage of toggle hologram command. */
+			else if (args[0].equalsIgnoreCase("toggleholo")) {
+				MessagesX.GEN_TOGGLEHOLO_HELP.msg(p);
+			}
+
+			/* Send usage of move command. */
+			else if (args[0].equalsIgnoreCase("move")) {
+				MessagesX.GEN_MOVE_HELP.msg(p);
+			}
+
+			/* Send usage of teleport command. */
+			else if (args[0].equalsIgnoreCase("tp") || args[0].equalsIgnoreCase("teleport")) {
+				MessagesX.GEN_TP_HELP.msg(p);
+			}
+
+			/* Lists all nearby generators. */
+			else if (args[0].equalsIgnoreCase("near")) {
+
+				this.getNearByGenerators(p, null);
+
 			}
 
 			/* No useful command found. Send invalid arg message. */
@@ -87,13 +122,33 @@ public class GenCommand implements CommandExecutor {
 			}
 
 			/* Attempt to teleport to a generator. */
-			else if (args[0].equalsIgnoreCase("tp")) {
+			else if (args[0].equalsIgnoreCase("tp") || args[0].equalsIgnoreCase("teleport")) {
 				this.genTeleport(p, args);
+			}
+
+			/* Attempt to teleport to a generator. */
+			else if (args[0].equalsIgnoreCase("near")) {
+				this.getNearByGenerators(p, args[1]);
 			}
 
 			/* Attempt to toggle the hologram. */
 			else if (args[0].equalsIgnoreCase("toggleholo")) {
 				this.toggleHolo(p, args);
+			}
+
+			/* Disable a generator. */
+			else if (args[0].equalsIgnoreCase("cancel")) {
+				this.main.getGenUt().cancelGenerator(p, args[1]);
+			}
+
+			/* Enable a generator. */
+			else if (args[0].equalsIgnoreCase("start")) {
+				this.main.getGenUt().enableGenerator(p, args[1]);
+			}
+
+			/* Moves a generator */
+			else if (args[0].equalsIgnoreCase("move")) {
+				this.moveGenerator(p, args);
 			}
 
 			/* No useful command found. Send invalid arg message. */
@@ -105,16 +160,35 @@ public class GenCommand implements CommandExecutor {
 
 		/* Create a generator with all available arguements. */
 		case 3: // Assume player typed /gen create <id>
-			this.main.getGenUt().createGenerator(p, args[1], args[2]);
-			return true;
-		case 4: // Assume player typed /gen create <id> <max-time> <player-limit>
-			this.main.getGenUt().createGenerator(p, args[1], args[2], args[3]);
-			return true;
-		case 5: // Assume player typed /gen create <id> <max-time> <player-limit> <velocity>
-			this.main.getGenUt().createGenerator(p, args[1], args[2], args[3], args[4]);
-			return true;
+			/* Attempt to set a new player limit. */
+			if (args[0].equalsIgnoreCase("playerlimit")) {
+				this.changePlayerLimit(p, args);
+				return true;
+			}
 
-		/* No useful command found. Send invalid arg message. */
+			/* Creates a new generator. */
+			else if (args[0].equalsIgnoreCase("create")) {
+				this.main.getGenUt().createGenerator(p, args[1], args[2]);
+				return true;
+			}
+
+		case 4: // Assume player typed /gen create <id> <max-time> <player-limit>
+
+			/* Creates a new generator. */
+			if (args[0].equalsIgnoreCase("create")) {
+				this.main.getGenUt().createGenerator(p, args[1], args[2], args[3]);
+				return true;
+			}
+
+		case 5: // Assume player typed /gen create <id> <max-time> <player-limit> <velocity>
+
+			/* Creates a new generator. */
+			if (args[0].equalsIgnoreCase("create")) {
+				this.main.getGenUt().createGenerator(p, args[1], args[2], args[3]);
+				return true;
+			}
+
+			/* No useful command found. Send invalid arg message. */
 		default:
 			MessagesX.INVALID_ARGUEMENTS.msg(p);
 			return true;
@@ -122,20 +196,144 @@ public class GenCommand implements CommandExecutor {
 		}
 	}
 
+	private void getNearByGenerators(final Player p, final String radius) {
+		final Location ploc = p.getLocation();
+
+		String amount = radius;
+
+		if (amount == null) {
+			amount = "50";
+		}
+
+		if (!Ut.isInt(amount)) {
+			amount = "50";
+		}
+
+		final int amountx = Integer.valueOf(amount);
+
+		final Map<String, String> map = new HashMap<>();
+		map.put("%range%", String.valueOf(amountx));
+
+		final String result = Generator.getGens().values().stream()
+				.filter(generator -> generator.getLoc().getWorld().equals(ploc.getWorld()))
+				.filter(generator -> generator.getLoc().distance(ploc) <= amountx)
+				.sorted(Comparator.comparingDouble(generator -> generator.getLoc().distance(ploc)))
+				.map(Generator::getId).collect(Collectors.joining(", "));
+
+		if (result.isEmpty()) {
+			MessagesX.NO_GENERATOR_NEARBY.msg(p, map);
+			return;
+		}
+
+		map.put("%generators%", result);
+		MessagesX.GEN_NEAR.msg(p, map);
+
+	}
+
+	private void moveGenerator(final Player p, final String[] args) {
+		final String id = args[1];
+		final Map<String, String> map = new HashMap<>();
+		map.put("%id%", id);
+
+		final Generator gen = this.main.getGenUt().getGenerator(id);
+
+		if (gen == null) {
+			MessagesX.NOT_GENERATOR.msg(p, map);
+			return;
+		}
+
+		map.put("%id%", gen.getId());
+
+		gen.setLoc(p.getLocation());
+		MessagesX.GEN_MOVED.msg(p, map);
+
+	}
+
+	private void changePlayerLimit(final Player p, final String[] args) {
+		final String id = args[1];
+		final Map<String, String> map = new HashMap<>();
+		map.put("%id%", id);
+
+		final Generator gen = this.main.getGenUt().getGenerator(id);
+
+		if (gen == null) {
+			MessagesX.NOT_GENERATOR.msg(p, map);
+			return;
+		}
+
+		map.put("%id%", gen.getId());
+
+		final String amount = args[2];
+		if (!Ut.isInt(amount) || amount == null) {
+			MessagesX.INVALID_PLAYER_AMOUNT.msg(p);
+			return;
+		}
+
+		final int playerAmount = Integer.valueOf(amount);
+		if (playerAmount <= 0) {
+			MessagesX.INVALID_PLAYER_AMOUNT.msg(p);
+			return;
+		}
+
+		map.put("%amount%", amount);
+
+		if (playerAmount == gen.getPlayerLimit()) {
+			MessagesX.PLAYER_AMOUNT_SAME.msg(p, map);
+			return;
+		}
+
+		gen.setPlayerLimit(playerAmount);
+		if (gen instanceof HoloGenerator) {
+			this.main.getHapi().refresh(gen);
+		}
+
+		MessagesX.PLAYER_AMOUNT_SET.msg(p, map);
+
+	}
+
 	private void toggleHolo(final Player p, final String[] args) {
-		// TODO Auto-generated method stub
-		
+		final String id = args[1];
+		final Map<String, String> map = new HashMap<>();
+		map.put("%id%", id);
+		if (!this.main.getGenUt().isGenerator(id, true)) {
+			MessagesX.NOT_GENERATOR.msg(p, map);
+			return;
+		}
+
+		final Generator generator = this.main.getGenUt().getGenerator(id);
+		generator.stopTaskAndRemoveFile();
+		generator.removeFromMap();
+		if (generator instanceof HoloGenerator) {
+			new SimpleGenerator(this.main, generator.getLoc(), generator.getId(), generator.getItem(),
+					generator.getMaxTime(), generator.getPlayerLimit(), generator.getVelocity().getY());
+		} else {
+			new HoloGenerator(this.main, generator.getLoc(), generator.getId(), generator.getItem(),
+					generator.getMaxTime(), generator.getPlayerLimit(), generator.getVelocity().getY());
+		}
+
 	}
 
 	/* Reloads and fixes all files and holograms. */
 	private void reloadFiles(final Player p) {
-		/* Reload config.yml and Refresh holograms */
+		/* Reload config.yml */
 		this.main.getSettings().reloadFile();
-		this.main.getHapi().refreshAll();
 
 		/* Reload messages.yml and Repair message paths */
 		this.main.getMessages().reloadFile();
 		MessagesX.repairPaths(this.main.getMessages());
+
+		final Collection<Generator> gens = new ArrayList<>(Generator.getGens().values());
+
+		gens.forEach(gen -> {
+			gen.getTask().cancel();
+			if (gen instanceof HoloGenerator) {
+				((HoloGenerator) gen).removeLines();
+				((HoloGenerator) gen).unregisterPlaceHolder();
+			}
+			gen.removeFromMap();
+		});
+
+		this.main.getGenUt().initGenerators();
 
 		/* Send reload message */
 		MessagesX.PLUGIN_RELOAD.msg(p);
@@ -149,13 +347,16 @@ public class GenCommand implements CommandExecutor {
 		final Generator generator = this.main.getGenUt().getGenerator(id);
 
 		if (generator == null) {
-			MessagesX.INVALID_ID.msg(p);
+			MessagesX.NOT_GENERATOR.msg(p);
 			return;
 		}
 
-		p.teleport(generator.getLoc());
+		final Location loc = generator.getLoc();
+		loc.setPitch(0);
+		loc.setYaw(0);
+		p.teleport(loc);
 		final Map<String, String> map = new HashMap<>();
-		map.put("%id%", args[1]);
+		map.put("%id%", generator.getId());
 		MessagesX.PLAYER_TELEPORT.msg(p, map);
 
 	}

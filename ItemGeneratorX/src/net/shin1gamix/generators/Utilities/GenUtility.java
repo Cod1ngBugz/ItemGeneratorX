@@ -1,7 +1,6 @@
 package net.shin1gamix.generators.Utilities;
 
 import java.io.File;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -86,7 +85,9 @@ public class GenUtility {
 		}
 
 		/* Does this id exist as a generator? */
-		if (isGenerator(id, true)) {
+		final Generator gen = this.getGenerator(id);
+		if (gen != null) {
+			map.put("%id%", gen.getId());
 			MessagesX.GEN_ALREADY_EXISTS.msg(p, map);
 			return;
 		}
@@ -158,20 +159,17 @@ public class GenUtility {
 		final Map<String, String> map = new HashMap<>();
 		map.put("%id%", id);
 
-		if (!isGenerator(id, true)) {
+		final Generator gen = this.getGenerator(id);
+
+		if (gen == null) {
 			MessagesX.NOT_GENERATOR.msg(p, map);
 			return;
 		}
 
-		/* Completely remove the generator */
-		if (!this.deleteGenerator(id)) {
-			Ut.msg(p, "&cGenerator couldn't be removed!");
-		}
+		map.put("%id%", gen.getId());
 
-		if (main.getSettings().getFile().contains("Generators." + id)) {
-			main.getSettings().getFile().set("Generators." + id, null);
-			main.getSettings().saveFile();
-		}
+		gen.stopTaskAndRemoveFile();
+		gen.removeFromMap();
 
 		MessagesX.GEN_REMOVED.msg(p, map);
 	}
@@ -195,15 +193,8 @@ public class GenUtility {
 			return;
 		}
 
-		final FileConfiguration file = this.main.getSettings().getFile();
-
-		final Collection<Generator> generators = Generator.gens.values();
-
 		/* Saving all working paths to config */
-		generators.forEach(gen -> gen.saveGenerator(this.main, file));
-
-		/* Saving file */
-		this.main.getSettings().saveFile();
+		Generator.gens.values().forEach(Generator::saveGenerator);
 	}
 
 	/**
@@ -217,20 +208,31 @@ public class GenUtility {
 	 * @see Generator#isWorking()
 	 * @see HologramAPI#refreshAll()
 	 */
-	public void disableGenerators(final Player p) {
+	public void cancelGenerators(final Player p) {
 		final Map<String, Generator> gens = Generator.gens;
 		if (gens.isEmpty()) {
-			// TODO No generators were working.
+			MessagesX.NO_AVAILABLE_GENERATOR.msg(p);
 			return;
 		}
 
 		if (gens.values().stream().allMatch(gen -> !gen.isWorking())) {
-			// TODO All gens are working
+			MessagesX.NO_GENERATOR_TO_CANCEL.msg(p);
 			return;
 		}
-		gens.values().forEach(gen -> gen.setWorking(false));
+		int i = 0;
+		for (final Generator gen : gens.values()) {
+			if (!gen.isWorking()) {
+				continue;
+			}
+			gen.setWorking(false);
+			gen.saveGenerator();
+			i++;
+		}
+
+		final Map<String, String> map = new HashMap<>();
+		map.put("%amount%", String.valueOf(i));
 		this.main.getHapi().refreshAll();
-		MessagesX.TASKS_CANCELLED.msg(p);
+		MessagesX.GENERATOR_CANCEL_ALL.msg(p, map);
 	}
 
 	/**
@@ -247,18 +249,73 @@ public class GenUtility {
 	public void enableGenerators(final Player p) {
 		final Map<String, Generator> gens = Generator.gens;
 		if (gens.isEmpty()) {
-			// TODO No generators were working.
+			MessagesX.NO_AVAILABLE_GENERATOR.msg(p);
 			return;
 		}
 
 		if (gens.values().stream().allMatch(Generator::isWorking)) {
-			// TODO All gens are working
+			MessagesX.NO_GENERATOR_TO_CONTINUE.msg(p);
 			return;
 		}
 
-		gens.values().forEach(gen -> gen.setWorking(true));
-		this.main.getHapi().refreshAll();
-		MessagesX.TASKS_CONTINUE.msg(p);
+		int i = 0;
+		for (final Generator gen : gens.values()) {
+			if (gen.isWorking()) {
+				continue;
+			}
+			gen.setWorking(true);
+			gen.saveGenerator();
+			this.main.getHapi().refresh(gen);
+			i++;
+		}
+		final Map<String, String> map = new HashMap<>();
+		map.put("%amount%", String.valueOf(i));
+		MessagesX.GENERATOR_CONTINUE_ALL.msg(p, map);
+	}
+
+	public void enableGenerator(final Player p, final String id) {
+		final Map<String, String> map = new HashMap<>();
+		final Generator gen = this.getGenerator(id);
+		if (gen == null) {
+			map.put("%id%", id);
+			MessagesX.NOT_GENERATOR.msg(p, map);
+			return;
+		}
+
+		map.put("%id%", gen.getId());
+
+		if (gen.isWorking()) {
+			MessagesX.GENERATOR_ALREADY_CONTINUE.msg(p, map);
+			return;
+		}
+
+		gen.setWorking(true);
+		gen.saveGenerator();
+		this.main.getHapi().refresh(gen);
+		MessagesX.GENERATOR_CONTINUE.msg(p, map);
+
+	}
+
+	public void cancelGenerator(final Player p, final String id) {
+		final Map<String, String> map = new HashMap<>();
+		final Generator gen = this.getGenerator(id);
+		if (gen == null) {
+			map.put("%id%", id);
+			MessagesX.NOT_GENERATOR.msg(p, map);
+			return;
+		}
+
+		map.put("%id%", gen.getId());
+		if (!gen.isWorking()) {
+			MessagesX.GENERATOR_ALREADY_CANCEL.msg(p, map);
+			return;
+		}
+
+		gen.setWorking(false);
+		gen.saveGenerator();
+		this.main.getHapi().refresh(gen);
+		MessagesX.GENERATOR_CANCEL.msg(p, map);
+
 	}
 
 	/**
@@ -270,7 +327,9 @@ public class GenUtility {
 	 *         {@link Generator#getGens()} map.
 	 */
 	public Generator getGenerator(final String id) {
-		return this.isGenerator(id, false) ? Generator.gens.get(id) : null;
+		final String result = Generator.gens.values().stream().map(Generator::getId).filter(id::equalsIgnoreCase)
+				.findFirst().orElse(null);
+		return this.isGenerator(id, true) ? Generator.gens.get(result) : null;
 	}
 
 	/**
@@ -282,12 +341,14 @@ public class GenUtility {
 	 */
 	public void initGenerators() {
 		final FileConfiguration file = this.main.getSettings().getFile();
-		if (file == null) {
+
+		if (!file.isSet("Generators")) {
 			return;
 		}
 		if (file.getConfigurationSection("Generators").getKeys(false).isEmpty()) {
 			return;
 		}
+
 		final Set<String> generators = file.getConfigurationSection("Generators").getKeys(false);
 
 		for (final String id : generators) {
@@ -312,29 +373,10 @@ public class GenUtility {
 			} else {
 				new SimpleGenerator(this.main, loc, id, item, time, playerLimit, velocity);
 			}
+			Bukkit.broadcastMessage("done");
 
 		}
 
 	}
 
-	public boolean deleteGenerator(final String id) {
-		final Generator gen = Generator.gens.get(id);
-		return this.deleteGenerator(gen);
-	}
-
-	/**
-	 * Attempts to remove a generator but not from file.
-	 * 
-	 * @param gen
-	 *            -> The generator to be removed.
-	 * @return -> true if the removal was succesful.
-	 * @see #deleteGenerator(String)
-	 */
-	public boolean deleteGenerator(final Generator gen) {
-		if (gen == null) {
-			return false;
-		}
-		gen.remove();
-		return true;
-	}
 }

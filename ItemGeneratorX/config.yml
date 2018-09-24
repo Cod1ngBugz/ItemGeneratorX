@@ -1,13 +1,13 @@
-# ###################################################################### #
-# 
+# ###################################################################### -
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #   small-less-than: If the max amount of the generator is
 # less or equal to this number it will be considered "small".
-#
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 #   materials: these are some placeholders that hold some material.
 # If that material is null or doesn't exist, the placeholder won't work.
-#
-#
-# ###################################################################### #
+# =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+# ###################################################################### -
+
 Holograms:
   materials:
     stone: 'STONE'
@@ -19,7 +19,7 @@ Holograms:
       - '%eblock%' # This has to be alone, if it's not alone, it will not be added as an item.
       - '&7&m------------------'
       - '&7\- &2Spawning &3%item-%generator%% &7-/'
-      - '    &6%time-left-%generator%%'
+      - '&6%time-left-%generator%%'
       - '%dblock%'
     Small-Time:
       - '%eblock%' # This has to be alone, if it's not alone, it will not be added as an item.
@@ -30,7 +30,7 @@ Holograms:
   Disabled:
     - '&7&m------------------'
     - '&7\- &3Generator Status &7-/'
-    - '   &cCurrently disabled...'
+    - '&cCurrently disabled...'
   Not-Enough-Players:
     - '&7&m------------------'
     - '&7\- &3Generator Status &7-/'

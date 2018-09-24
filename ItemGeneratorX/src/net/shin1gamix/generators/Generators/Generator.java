@@ -4,12 +4,12 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.bukkit.Location;
-import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
 
 import net.shin1gamix.generators.Core;
+import net.shin1gamix.generators.Utilities.CFG;
 
 public interface Generator {
 
@@ -26,7 +26,7 @@ public interface Generator {
 	 * @param file
 	 *            -> The file to save the generator's stats.
 	 */
-	public void saveGenerator(final Core main, final FileConfiguration file);
+	public void saveGenerator();
 
 	/**
 	 * @return the currentTime -> An integer that is less than {@link #maxTime}
@@ -55,6 +55,11 @@ public interface Generator {
 	 */
 	public Location getLoc();
 
+	/**
+	 * @return the loc -> The location where the item is going to be dropped.
+	 */
+	public void setLoc(final Location loc);
+	
 	/**
 	 * @return the playerLimit -> Amount of users needed for the generator to work.
 	 */
@@ -103,5 +108,7 @@ public interface Generator {
 	 */
 	public BukkitTask getTask();
 
-	public void remove();
+	public void stopTaskAndRemoveFile();
+
+	public void removeFromMap();
 }

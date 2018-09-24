@@ -8,10 +8,11 @@ import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
 
 import net.shin1gamix.generators.Core;
+import net.shin1gamix.generators.Utilities.CFG;
 
 public class SimpleGenerator implements Generator {
 	private final String id;
-	private final Location loc;
+	private Location loc;
 	private final ItemStack item;
 
 	private final int maxTime;
@@ -38,28 +39,15 @@ public class SimpleGenerator implements Generator {
 		this.setCurrentTime(0); // Resetting time
 		this.maxTime = time; // Setting max time
 		this.setPlayerLimit(playerLimit); // Setting player limit.
+		final FileConfiguration file = this.getCore().getSettings().getFile();
+		if (file.contains("Generators." + this.id + ".working")
+				&& !file.getBoolean("Generators." + this.id + ".working")) {
+			this.setWorking(false);
+		}
 		this.vel = new Vector(0, velocity, 0); // Setting vector with velocity
 		this.creationDate = System.currentTimeMillis(); // Creation time
 		gens.put(id, this); // Adds the generator in the map.
 		task = Bukkit.getScheduler().runTaskTimer(main, new GeneratorRunnable(this), 5, 1);
-	}
-
-	/**
-	 * Sets a generator in the config file while removing and unregistering its
-	 * holograms.
-	 * 
-	 * @param file
-	 *            -> The file to save the generator's stats.
-	 */
-	public void saveGenerator(final Core main, final FileConfiguration file) {
-		final String path = "Generators." + this.id + ".";
-		file.set(path + "creation-time", this.creationDate);
-		file.set(path + "time", this.maxTime); // Setting the time
-		file.set(path + "player-limit", this.playerLimit); // Setting player-limit
-		file.set(path + "item", this.item); // Settings the item
-		file.set(path + "location", this.loc); // Setting
-		file.set(path + "velocity", this.vel.getY());
-		file.set(path + "using-hologram", false);
 	}
 
 	/**
@@ -94,6 +82,10 @@ public class SimpleGenerator implements Generator {
 	 */
 	public Location getLoc() {
 		return this.loc;
+	}
+
+	public void setLoc(final Location loc) {
+		this.loc = loc;
 	}
 
 	/**
@@ -144,7 +136,7 @@ public class SimpleGenerator implements Generator {
 	 * @return boolean -> Whether there are enough players for the generator to run.
 	 */
 	public boolean areEnoughPlayers() {
-		return this.playerLimit > 0 && this.playerLimit <= Bukkit.getOnlinePlayers().size();
+		return this.playerLimit >= 0 && this.playerLimit <= Bukkit.getOnlinePlayers().size();
 	}
 
 	/**
@@ -166,14 +158,42 @@ public class SimpleGenerator implements Generator {
 		return this.task;
 	}
 
-	public void remove() {
+	/**
+	 * Sets a generator in the config file while removing and unregistering its
+	 * holograms.
+	 * 
+	 * @param file
+	 *            -> The file to save the generator's stats.
+	 */
+	public void saveGenerator() {
+		final CFG cfg = this.main.getSettings();
+		final FileConfiguration file = cfg.getFile();
+		final String path = "Generators." + this.id + ".";
+		if (!file.contains(path + "creation-time")) {
+			file.set(path + "creation-time", this.creationDate);
+		}
+		file.set(path + "time", this.maxTime); // Setting the time
+		file.set(path + "player-limit", this.playerLimit); // Setting player-limit
+		file.set(path + "velocity", this.vel.getY());
+		file.set(path + "using-hologram", false);
+		file.set(path + "working", this.working);
+		file.set(path + "item", this.item); // Settings the item
+		file.set(path + "location", this.loc); // Setting
+
+		cfg.saveFile();
+	}
+
+	public void stopTaskAndRemoveFile() {
 		this.task.cancel();
-		gens.remove(this.id);
 		final FileConfiguration file = this.main.getSettings().getFile();
 		if (file.contains("Generators." + id)) {
 			file.set("Generators." + id, null);
 			this.main.getSettings().saveFile();
 		}
+	}
+
+	public void removeFromMap() {
+		Generator.getGens().remove(this.id);
 	}
 
 }

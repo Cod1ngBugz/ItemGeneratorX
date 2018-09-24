@@ -33,6 +33,7 @@ public class Core extends JavaPlugin {
 	 */
 	@Override
 	public void onEnable() {
+		
 		if (!Bukkit.getPluginManager().getPlugin("HolographicDisplays").isEnabled()) {
 			Bukkit.getOnlinePlayers().stream().filter(Player::isOp).forEach(player -> {
 				Ut.msg(player, "&cWarning! Dependancy: &3HolographicDisplays &cwasn't found...");

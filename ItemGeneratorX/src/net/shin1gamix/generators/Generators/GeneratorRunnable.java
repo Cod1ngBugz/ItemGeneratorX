@@ -4,7 +4,7 @@ public class GeneratorRunnable implements Runnable {
 
 	private final Generator generator;
 
-	public GeneratorRunnable(Generator generator) {
+	public GeneratorRunnable(final Generator generator) {
 		this.generator = generator;
 	}
 

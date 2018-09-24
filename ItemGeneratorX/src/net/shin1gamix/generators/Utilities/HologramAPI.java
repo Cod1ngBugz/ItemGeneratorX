@@ -159,7 +159,7 @@ public class HologramAPI implements Listener {
 	 */
 	public void refreshAll() {
 		Generator.gens.values().stream().filter(gen -> gen instanceof HoloGenerator)
-				.forEach(generator -> refresh((HoloGenerator) generator));
+				.forEach(generator -> refresh(generator));
 	}
 
 	/**
@@ -185,7 +185,10 @@ public class HologramAPI implements Listener {
 	 * @see #refresh(Generator)
 	 * @see BukkitRunnable#runTaskLater(org.bukkit.plugin.Plugin, long)
 	 */
-	public void refreshLater(final HoloGenerator generator) {
+	public void refreshLater(final Generator generator) {
+		if (!(generator instanceof HoloGenerator)) {
+			return;
+		}
 		new BukkitRunnable() {
 			@Override
 			public void run() {
@@ -206,7 +209,7 @@ public class HologramAPI implements Listener {
 	 * @see Generator#getMaxTime()
 	 * @see #addLine(Generator, FileConfiguration, Hologram, String)
 	 */
-	public void refresh(final HoloGenerator generator) {
+	public void refresh(final Generator generator) {
 		final FileConfiguration file = this.main.getSettings().getFile();
 
 		/* Is the file in any case null or are there no generators? */
@@ -214,9 +217,13 @@ public class HologramAPI implements Listener {
 			return;
 		}
 
+		if (!(generator instanceof HoloGenerator)) {
+			return;
+		}
+
 		/* Let's delete all lines of the hologram. */
-		final Hologram hologram = generator.getHolo();
-		hologram.clearLines();
+		final HoloGenerator hologen = (HoloGenerator) generator;
+		hologen.removeLines();
 
 		/**
 		 * @ENABLED If the generator is not working the disabled hologram will be used.
@@ -230,6 +237,8 @@ public class HologramAPI implements Listener {
 		 * @SMALL_TIME If the generator is working and its max time is less than 20 the
 		 *             small time hologram will be used
 		 */
+
+		final Hologram hologram = hologen.getHolo();
 
 		/* If the generator is not working we neend't continue... */
 		if (!generator.isWorking()) {
@@ -249,8 +258,13 @@ public class HologramAPI implements Listener {
 			return;
 		}
 
+		int smallLessThan = file.getInt("Holograms.small-less-than");
+          if (smallLessThan <= 0) {
+        	  smallLessThan = 1;
+		}
+
 		/* Is the max time too big? Let's use the big-time from the file. */
-		if (generator.getMaxTime() > file.getInt("Holograms.small-less-than")) {
+		if (generator.getMaxTime() > smallLessThan) {
 			final List<String> big = file.getStringList("Holograms.Enabled.Big-Time");
 			if (!big.isEmpty()) {
 				big.forEach(line -> addLine(generator, file, hologram, line));
